@@ -54,6 +54,7 @@ Partial Class FrmProductos
         ' 
         ' txtNombre
         ' 
+        txtNombre.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         txtNombre.Location = New System.Drawing.Point(676, 128)
         txtNombre.MaxLength = 100
         txtNombre.Name = "txtNombre"
@@ -74,6 +75,7 @@ Partial Class FrmProductos
         ' 
         ' btnNuevo
         ' 
+        btnNuevo.Anchor = System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right
         btnNuevo.Location = New System.Drawing.Point(676, 434)
         btnNuevo.Name = "btnNuevo"
         btnNuevo.Size = New System.Drawing.Size(112, 34)
@@ -83,10 +85,11 @@ Partial Class FrmProductos
         ' 
         ' btnGuardar
         ' 
+        btnGuardar.Anchor = System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right
         btnGuardar.BackColor = Drawing.Color.DarkSlateBlue
         btnGuardar.Font = New System.Drawing.Font("Segoe UI", 9F, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         btnGuardar.ForeColor = Drawing.Color.White
-        btnGuardar.Location = New System.Drawing.Point(833, 434)
+        btnGuardar.Location = New System.Drawing.Point(813, 434)
         btnGuardar.Name = "btnGuardar"
         btnGuardar.Size = New System.Drawing.Size(112, 34)
         btnGuardar.TabIndex = 4
@@ -95,6 +98,7 @@ Partial Class FrmProductos
         ' 
         ' btnActualizar
         ' 
+        btnActualizar.Anchor = System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right
         btnActualizar.BackColor = Drawing.Color.DarkSlateBlue
         btnActualizar.Font = New System.Drawing.Font("Segoe UI", 9F, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         btnActualizar.ForeColor = Drawing.Color.White
@@ -107,10 +111,11 @@ Partial Class FrmProductos
         ' 
         ' btnEliminar
         ' 
+        btnEliminar.Anchor = System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right
         btnEliminar.BackColor = Drawing.Color.FromArgb(CByte(192), CByte(0), CByte(0))
         btnEliminar.Font = New System.Drawing.Font("Segoe UI", 9F, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         btnEliminar.ForeColor = Drawing.Color.White
-        btnEliminar.Location = New System.Drawing.Point(833, 474)
+        btnEliminar.Location = New System.Drawing.Point(813, 474)
         btnEliminar.Name = "btnEliminar"
         btnEliminar.Size = New System.Drawing.Size(112, 34)
         btnEliminar.TabIndex = 6
@@ -128,6 +133,7 @@ Partial Class FrmProductos
         ' 
         ' lblNombre
         ' 
+        lblNombre.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblNombre.AutoSize = True
         lblNombre.Location = New System.Drawing.Point(676, 100)
         lblNombre.Name = "lblNombre"
@@ -137,6 +143,7 @@ Partial Class FrmProductos
         ' 
         ' lblCategoria
         ' 
+        lblCategoria.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblCategoria.AutoSize = True
         lblCategoria.Location = New System.Drawing.Point(676, 185)
         lblCategoria.Name = "lblCategoria"
@@ -164,6 +171,7 @@ Partial Class FrmProductos
         ' 
         ' cboCategoria
         ' 
+        cboCategoria.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         cboCategoria.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         cboCategoria.FormattingEnabled = True
         cboCategoria.Location = New System.Drawing.Point(676, 222)
@@ -173,6 +181,7 @@ Partial Class FrmProductos
         ' 
         ' lblPrecio
         ' 
+        lblPrecio.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblPrecio.AutoSize = True
         lblPrecio.Location = New System.Drawing.Point(676, 274)
         lblPrecio.Name = "lblPrecio"
@@ -182,6 +191,7 @@ Partial Class FrmProductos
         ' 
         ' nudPrecio
         ' 
+        nudPrecio.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         nudPrecio.DecimalPlaces = 2
         nudPrecio.Increment = New Decimal(New Integer() {5, 0, 0, 65536})
         nudPrecio.Location = New System.Drawing.Point(676, 302)
@@ -192,6 +202,7 @@ Partial Class FrmProductos
         ' 
         ' nudExistencia
         ' 
+        nudExistencia.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         nudExistencia.Location = New System.Drawing.Point(676, 384)
         nudExistencia.Maximum = New Decimal(New Integer() {100000, 0, 0, 0})
         nudExistencia.Name = "nudExistencia"
@@ -200,6 +211,7 @@ Partial Class FrmProductos
         ' 
         ' lblExistencia
         ' 
+        lblExistencia.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblExistencia.AutoSize = True
         lblExistencia.Location = New System.Drawing.Point(676, 356)
         lblExistencia.Name = "lblExistencia"
