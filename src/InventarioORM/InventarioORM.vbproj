@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net10.0-windows</TargetFramework>
+		<UseWindowsForms>true</UseWindowsForms>
+		<RootNamespace>InventarioORM</RootNamespace>
+		<AssemblyName>InventarioORM</AssemblyName>
+		<!-- Punto de entrada explícito en Program.vb (mismo patrón de sesiones anteriores) -->
+		<MyType>WindowsFormsWithCustomSubMain</MyType>
+		<StartupObject>InventarioORM.Program</StartupObject>
+		<OptionStrict>On</OptionStrict>
+		<OptionInfer>On</OptionInfer>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Proveedor de EF Core para MariaDB: instala EF Core 9.x y MySqlConnector 2.4.0 -->
+		<!-- No agregar Microsoft.EntityFrameworkCore 10.x por separado -->
+		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- La guía de la carpeta bin\Debug no forma parte de la compilación -->
+		<None Remove="bin\**" />
+	</ItemGroup>
+
+</Project>
