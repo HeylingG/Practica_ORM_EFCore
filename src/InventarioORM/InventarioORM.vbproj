@@ -17,6 +17,8 @@
 		<!-- Proveedor de EF Core para MariaDB: instala EF Core 9.x y MySqlConnector 2.4.0 -->
 		<!-- No agregar Microsoft.EntityFrameworkCore 10.x por separado -->
 		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+		<PackageReference Include="ZXing.Net" Version="0.16.11" />
+		<PackageReference Include="ZXing.Net.Bindings.Windows.Compatibility" Version="0.16.16" />
 	</ItemGroup>
 
 	<ItemGroup>

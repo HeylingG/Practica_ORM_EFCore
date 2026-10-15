@@ -1,8 +1,12 @@
-﻿
-Imports System.Collections.Generic
+﻿Imports System.Collections.Generic
+Imports System.Drawing
 Imports System.Linq
+Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports Microsoft.EntityFrameworkCore
+Imports ZXing
+Imports ZXing.Common
+Imports ZXing.Windows.Compatibility
 
 Public Class FrmProductos
 
@@ -33,20 +37,22 @@ Public Class FrmProductos
             Await CargarCategoriasAsync()
             Await CargarFiltroCategoriasAsync()
 
-            _cargandoFormulario = False
-
-            Await CargarProductosAsync()
-
         Catch ex As Exception
             MostrarError("No fue posible cargar los datos.", ex)
         Finally
             _cargandoFormulario = False
         End Try
 
+        Try
+            Await AplicarFiltrosAsync()
+        Catch ex As Exception
+            MostrarError("No fue posible cargar los productos.", ex)
+        End Try
+
     End Sub
 
     ' =====================================================
-    ' CARGAR CATEGORÍAS DEL PRODUCTO
+    ' CARGAR CATEGORÍAS
     ' =====================================================
 
     Private Async Function CargarCategoriasAsync() As Task
@@ -65,10 +71,6 @@ Public Class FrmProductos
         End Using
 
     End Function
-
-    ' =====================================================
-    ' REFUERZO 1: COMBOBOX PARA FILTRAR POR CATEGORÍA
-    ' =====================================================
 
     Private Async Function CargarFiltroCategoriasAsync() As Task
 
@@ -92,20 +94,49 @@ Public Class FrmProductos
             For Each categoria In categorias
                 opciones.Add(
                     New KeyValuePair(Of Integer, String)(
-                        categoria.Id,
-                        categoria.Nombre))
+                        categoria.Id, categoria.Nombre))
             Next
 
             cboFiltroCategoria.DisplayMember = "Value"
             cboFiltroCategoria.ValueMember = "Key"
             cboFiltroCategoria.DataSource = opciones
-
             cboFiltroCategoria.DropDownStyle =
                 ComboBoxStyle.DropDownList
 
         End Using
 
     End Function
+
+    ' =====================================================
+    ' ABRIR MANTENIMIENTO DE CATEGORÍAS
+    ' =====================================================
+
+    Private Async Sub btnCategorias_Click(
+        sender As Object,
+        e As EventArgs
+    ) Handles btnCategorias.Click
+
+        Try
+            Using formulario As New FrmCategorias()
+                formulario.ShowDialog(Me)
+            End Using
+
+            _cargandoFormulario = True
+
+            Await CargarCategoriasAsync()
+            Await CargarFiltroCategoriasAsync()
+
+            _cargandoFormulario = False
+
+            Await AplicarFiltrosAsync()
+
+        Catch ex As Exception
+            _cargandoFormulario = False
+            MostrarError(
+                "No se pudieron recargar las categorías.", ex)
+        End Try
+
+    End Sub
 
     ' =====================================================
     ' UTILIDADES
@@ -118,15 +149,12 @@ Public Class FrmProductos
 
         UseWaitCursor = ocupado
 
-        For Each b In {
-            btnNuevo,
-            btnGuardar,
-            btnActualizar,
-            btnEliminar,
-            btnBuscar
-        }
-            b.Enabled = Not ocupado
-        Next
+        btnNuevo.Enabled = Not ocupado
+        btnGuardar.Enabled = Not ocupado
+        btnActualizar.Enabled = Not ocupado
+        btnEliminar.Enabled = Not ocupado
+        btnBuscar.Enabled = Not ocupado
+        btnCategorias.Enabled = Not ocupado
 
         If mensaje <> "" Then
             lblEstado.Text = mensaje
@@ -162,6 +190,36 @@ Public Class FrmProductos
 
         End If
 
+        Dim categoriaId As Integer
+
+        If Not Integer.TryParse(
+            cboCategoria.SelectedValue.ToString(),
+            categoriaId) OrElse categoriaId <= 0 Then
+
+            MessageBox.Show(
+                "Seleccione una categoría válida.",
+                "Validación",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning)
+
+            cboCategoria.Focus()
+            Return False
+
+        End If
+
+        If txtCodigoBarras.Text.Trim().Length > 20 Then
+
+            MessageBox.Show(
+                "El código de barras no puede superar 20 caracteres.",
+                "Validación",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning)
+
+            txtCodigoBarras.Focus()
+            Return False
+
+        End If
+
         Return True
 
     End Function
@@ -172,6 +230,7 @@ Public Class FrmProductos
         _versionLeida = 0
 
         txtNombre.Clear()
+        txtCodigoBarras.Clear()
         nudPrecio.Value = 0
         nudExistencia.Value = 0
 
@@ -200,8 +259,7 @@ Public Class FrmProductos
     End Sub
 
     ' =====================================================
-    ' READ: CONSULTAR Y FILTRAR PRODUCTOS
-    ' REFUERZO 1 Y 2
+    ' CONSULTAR Y FILTRAR PRODUCTOS
     ' =====================================================
 
     Private Async Function CargarProductosAsync(
@@ -212,35 +270,29 @@ Public Class FrmProductos
         EstablecerOcupado(True, "Consultando productos...")
 
         Try
-
             Using ctx As New AppDbContext()
 
                 Dim consulta = ctx.Productos.AsNoTracking()
 
-                ' Búsqueda por nombre
                 If Not String.IsNullOrWhiteSpace(filtro) Then
 
                     Dim texto As String = filtro.Trim()
 
                     consulta = consulta.Where(
-                        Function(p) p.Nombre.Contains(texto))
+                        Function(p) p.Nombre.Contains(texto) OrElse
+                        (p.CodigoBarras IsNot Nothing AndAlso
+                         p.CodigoBarras.Contains(texto)))
 
                 End If
 
-                ' REFUERZO 1: filtrar por categoría
                 If idCategoria > 0 Then
-
                     consulta = consulta.Where(
                         Function(p) p.CategoriaId = idCategoria)
-
                 End If
 
-                ' REFUERZO 2: existencia menor a 10
                 If chkBajoStock.Checked Then
-
                     consulta = consulta.Where(
                         Function(p) p.Existencia < 10)
-
                 End If
 
                 Dim lista = Await consulta _
@@ -252,7 +304,8 @@ Public Class FrmProductos
                         .CategoriaId = p.CategoriaId,
                         .Precio = p.Precio,
                         .Existencia = p.Existencia,
-                        .VersionFila = p.VersionFila
+                        .VersionFila = p.VersionFila,
+                        .CodigoBarras = p.CodigoBarras
                     }) _
                     .ToListAsync()
 
@@ -265,7 +318,6 @@ Public Class FrmProductos
 
             End Using
 
-            ' Actualizar siempre el valor total del inventario
             Await ActualizarValorInventarioAsync()
 
         Finally
@@ -289,23 +341,40 @@ Public Class FrmProductos
             End If
 
             If .Contains("Id") Then
+                .Item("Id").HeaderText = "ID"
                 .Item("Id").FillWeight = 30
             End If
 
             If .Contains("Nombre") Then
-                .Item("Nombre").FillWeight = 160
+                .Item("Nombre").HeaderText = "Producto"
+                .Item("Nombre").FillWeight = 140
+            End If
+
+            If .Contains("Categoria") Then
+                .Item("Categoria").HeaderText = "Categoría"
+            End If
+
+            If .Contains("CodigoBarras") Then
+                .Item("CodigoBarras").HeaderText =
+                    "Código de barras"
+                .Item("CodigoBarras").FillWeight = 100
             End If
 
             If .Contains("Precio") Then
+                .Item("Precio").HeaderText = "Precio"
                 .Item("Precio").DefaultCellStyle.Format =
                     "'C$' #,##0.00"
-
                 .Item("Precio").DefaultCellStyle.Alignment =
                     DataGridViewContentAlignment.MiddleRight
             End If
 
+            If .Contains("Existencia") Then
+                .Item("Existencia").HeaderText = "Existencia"
+            End If
+
             If .Contains("VersionFila") Then
                 .Item("VersionFila").HeaderText = "Versión"
+                .Item("VersionFila").Visible = False
             End If
 
         End With
@@ -313,8 +382,7 @@ Public Class FrmProductos
     End Sub
 
     ' =====================================================
-    ' REFUERZO 3: VALOR TOTAL DEL INVENTARIO
-    ' Precio multiplicado por existencia
+    ' VALOR TOTAL DEL INVENTARIO
     ' =====================================================
 
     Private Async Function ActualizarValorInventarioAsync() As Task
@@ -337,7 +405,7 @@ Public Class FrmProductos
     End Function
 
     ' =====================================================
-    ' REFUERZO 4: VALIDAR NOMBRES DUPLICADOS
+    ' VALIDAR NOMBRES DUPLICADOS
     ' =====================================================
 
     Private Async Function ExisteNombreDuplicadoAsync(
@@ -350,15 +418,15 @@ Public Class FrmProductos
         Using ctx As New AppDbContext()
 
             Return Await ctx.Productos.AnyAsync(
-                Function(p) p.Nombre = nombreBuscado _
-                    AndAlso p.Id <> idExcluir)
+                Function(p) p.Nombre = nombreBuscado AndAlso
+                            p.Id <> idExcluir)
 
         End Using
 
     End Function
 
     ' =====================================================
-    ' BOTÓN BUSCAR
+    ' BUSCAR
     ' =====================================================
 
     Private Async Sub btnBuscar_Click(
@@ -373,10 +441,6 @@ Public Class FrmProductos
         End Try
 
     End Sub
-
-    ' =====================================================
-    ' APLICAR TODOS LOS FILTROS
-    ' =====================================================
 
     Private Async Function AplicarFiltrosAsync() As Task
 
@@ -394,10 +458,6 @@ Public Class FrmProductos
 
     End Function
 
-    ' =====================================================
-    ' CAMBIO DE CATEGORÍA
-    ' =====================================================
-
     Private Async Sub cboFiltroCategoria_SelectedIndexChanged(
         sender As Object,
         e As EventArgs
@@ -408,14 +468,11 @@ Public Class FrmProductos
         Try
             Await AplicarFiltrosAsync()
         Catch ex As Exception
-            MostrarError("No se pudo filtrar por categoría.", ex)
+            MostrarError(
+                "No se pudo filtrar por categoría.", ex)
         End Try
 
     End Sub
-
-    ' =====================================================
-    ' REFUERZO 2: CAMBIO DE FILTRO DE BAJO STOCK
-    ' =====================================================
 
     Private Async Sub chkBajoStock_CheckedChanged(
         sender As Object,
@@ -427,13 +484,14 @@ Public Class FrmProductos
         Try
             Await AplicarFiltrosAsync()
         Catch ex As Exception
-            MostrarError("No se pudo filtrar por existencia.", ex)
+            MostrarError(
+                "No se pudo filtrar por existencia.", ex)
         End Try
 
     End Sub
 
     ' =====================================================
-    ' SELECCIONAR PRODUCTO EN LA GRILLA
+    ' SELECCIONAR PRODUCTO
     ' =====================================================
 
     Private Sub dgvProductos_SelectionChanged(
@@ -454,6 +512,8 @@ Public Class FrmProductos
         _versionLeida = fila.VersionFila
 
         txtNombre.Text = fila.Nombre
+        txtCodigoBarras.Text = If(fila.CodigoBarras, "")
+
         cboCategoria.SelectedValue = fila.CategoriaId
 
         nudPrecio.Value = Math.Max(
@@ -462,12 +522,14 @@ Public Class FrmProductos
 
         nudExistencia.Value = Math.Max(
             nudExistencia.Minimum,
-            Math.Min(nudExistencia.Maximum, CDec(fila.Existencia)))
+            Math.Min(
+                nudExistencia.Maximum,
+                CDec(fila.Existencia)))
 
     End Sub
 
     ' =====================================================
-    ' BOTÓN NUEVO
+    ' NUEVO
     ' =====================================================
 
     Private Sub btnNuevo_Click(
@@ -483,7 +545,7 @@ Public Class FrmProductos
     End Sub
 
     ' =====================================================
-    ' CREATE: GUARDAR PRODUCTO
+    ' GUARDAR PRODUCTO
     ' =====================================================
 
     Private Async Sub btnGuardar_Click(
@@ -494,8 +556,6 @@ Public Class FrmProductos
         If Not DatosValidos() Then Return
 
         Try
-
-            ' REFUERZO 4: comprobar si ya existe el nombre
             If Await ExisteNombreDuplicadoAsync(txtNombre.Text) Then
 
                 MessageBox.Show(
@@ -519,11 +579,14 @@ Public Class FrmProductos
                     .CategoriaId = CInt(cboCategoria.SelectedValue),
                     .Precio = nudPrecio.Value,
                     .Existencia = CInt(nudExistencia.Value),
-                    .VersionFila = 1
+                    .VersionFila = 1,
+                    .CodigoBarras = If(
+                        String.IsNullOrWhiteSpace(txtCodigoBarras.Text),
+                        Nothing,
+                        txtCodigoBarras.Text.Trim())
                 }
 
                 ctx.Productos.Add(nuevo)
-
                 Await ctx.SaveChangesAsync()
 
                 lblEstado.Text =
@@ -543,7 +606,7 @@ Public Class FrmProductos
     End Sub
 
     ' =====================================================
-    ' UPDATE: ACTUALIZAR PRODUCTO
+    ' ACTUALIZAR PRODUCTO
     ' =====================================================
 
     Private Async Sub btnActualizar_Click(
@@ -568,11 +631,8 @@ Public Class FrmProductos
         Dim huboConflicto As Boolean = False
 
         Try
-
-            ' Evitar duplicados excluyendo el producto actual
             If Await ExisteNombreDuplicadoAsync(
-                txtNombre.Text,
-                _idSeleccionado) Then
+                txtNombre.Text, _idSeleccionado) Then
 
                 MessageBox.Show(
                     "Ya existe otro producto con ese nombre.",
@@ -593,11 +653,8 @@ Public Class FrmProductos
                 Dim p = Await ctx.Productos.FindAsync(_idSeleccionado)
 
                 If p Is Nothing Then
-
                     huboConflicto = True
-
                 Else
-
                     ctx.Entry(p) _
                         .Property(Function(x) x.VersionFila) _
                         .OriginalValue = _versionLeida
@@ -606,13 +663,17 @@ Public Class FrmProductos
                     p.CategoriaId = CInt(cboCategoria.SelectedValue)
                     p.Precio = nudPrecio.Value
                     p.Existencia = CInt(nudExistencia.Value)
+                    p.CodigoBarras = If(
+                        String.IsNullOrWhiteSpace(txtCodigoBarras.Text),
+                        Nothing,
+                        txtCodigoBarras.Text.Trim())
+
                     p.VersionFila = _versionLeida + 1
 
                     Await ctx.SaveChangesAsync()
 
                     lblEstado.Text =
                         $"Producto #{p.Id} actualizado correctamente."
-
                 End If
 
             End Using
@@ -621,7 +682,8 @@ Public Class FrmProductos
             huboConflicto = True
 
         Catch ex As Exception
-            MostrarError("No se pudo actualizar el producto.", ex)
+            MostrarError(
+                "No se pudo actualizar el producto.", ex)
             Return
 
         Finally
@@ -629,15 +691,12 @@ Public Class FrmProductos
         End Try
 
         If huboConflicto Then
-
             MessageBox.Show(
                 "Otro usuario modificó o eliminó este producto." &
-                vbCrLf &
-                "Se mostrarán los datos actuales.",
+                vbCrLf & "Se mostrarán los datos actuales.",
                 "Conflicto de concurrencia",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning)
-
         End If
 
         Await AplicarFiltrosAsync()
@@ -645,7 +704,7 @@ Public Class FrmProductos
     End Sub
 
     ' =====================================================
-    ' DELETE: ELIMINAR PRODUCTO
+    ' ELIMINAR PRODUCTO
     ' =====================================================
 
     Private Async Sub btnEliminar_Click(
@@ -676,7 +735,6 @@ Public Class FrmProductos
         Dim huboConflicto As Boolean = False
 
         Try
-
             EstablecerOcupado(True, "Eliminando producto...")
 
             Using ctx As New AppDbContext()
@@ -684,21 +742,17 @@ Public Class FrmProductos
                 Dim p = Await ctx.Productos.FindAsync(_idSeleccionado)
 
                 If p Is Nothing Then
-
                     huboConflicto = True
-
                 Else
-
                     ctx.Entry(p) _
                         .Property(Function(x) x.VersionFila) _
                         .OriginalValue = _versionLeida
 
                     ctx.Productos.Remove(p)
-
                     Await ctx.SaveChangesAsync()
 
-                    lblEstado.Text = "Producto eliminado correctamente."
-
+                    lblEstado.Text =
+                        "Producto eliminado correctamente."
                 End If
 
             End Using
@@ -707,7 +761,8 @@ Public Class FrmProductos
             huboConflicto = True
 
         Catch ex As Exception
-            MostrarError("No se pudo eliminar el producto.", ex)
+            MostrarError(
+                "No se pudo eliminar el producto.", ex)
             Return
 
         Finally
@@ -715,18 +770,86 @@ Public Class FrmProductos
         End Try
 
         If huboConflicto Then
-
             MessageBox.Show(
                 "El producto fue modificado o eliminado por otro usuario.",
                 "Conflicto de concurrencia",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning)
-
         End If
 
         Await AplicarFiltrosAsync()
         LimpiarCampos()
 
     End Sub
+
+    Private Sub btnCodigoBarras_Click(
+        sender As Object,
+        e As EventArgs
+    ) Handles btnCodigoBarras.Click
+
+        If _idSeleccionado = 0 Then
+            MessageBox.Show(
+                "Seleccione un producto de la lista.",
+                "Código de barras",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim codigo As String = txtCodigoBarras.Text.Trim()
+
+        If String.IsNullOrWhiteSpace(codigo) Then
+            codigo = "PROD" & _idSeleccionado.ToString("D8")
+            txtCodigoBarras.Text = codigo
+        End If
+
+        Try
+            Dim escritor As New BarcodeWriter()
+            escritor.Format = BarcodeFormat.CODE_128
+            escritor.Options = New EncodingOptions With {
+                .Width = 400,
+                .Height = 120,
+                .Margin = 10
+            }
+
+            Using imagen As Bitmap = escritor.Write(codigo)
+                Using ventana As New Form()
+
+                    ventana.Text = "Código de barras - " & txtNombre.Text
+                    ventana.StartPosition = FormStartPosition.CenterParent
+                    ventana.ClientSize = New Size(440, 220)
+
+                    Dim vista As New PictureBox With {
+                        .Dock = DockStyle.Fill,
+                        .SizeMode = PictureBoxSizeMode.Zoom,
+                        .Image = New Bitmap(imagen)
+                    }
+
+                    Dim etiqueta As New Label With {
+                        .Text = codigo,
+                        .Dock = DockStyle.Bottom,
+                        .Height = 35,
+                        .TextAlign = ContentAlignment.MiddleCenter
+                    }
+
+                    ventana.Controls.Add(vista)
+                    ventana.Controls.Add(etiqueta)
+
+                    ventana.ShowDialog(Me)
+
+                    vista.Image.Dispose()
+                End Using
+            End Using
+
+        Catch ex As Exception
+            MessageBox.Show(
+                "No se pudo generar el código de barras: " & ex.Message,
+                "Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error)
+        End Try
+
+    End Sub
+
 
 End Class

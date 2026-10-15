@@ -44,6 +44,9 @@ Partial Class FrmProductos
         cboFiltroCategoria = New System.Windows.Forms.ComboBox()
         chkBajoStock = New System.Windows.Forms.CheckBox()
         lblValorInventario = New System.Windows.Forms.Label()
+        txtCodigoBarras = New System.Windows.Forms.TextBox()
+        btnCategorias = New System.Windows.Forms.Button()
+        btnCodigoBarras = New System.Windows.Forms.Button()
         CType(dgvProductos, ComponentModel.ISupportInitialize).BeginInit()
         CType(nudPrecio, ComponentModel.ISupportInitialize).BeginInit()
         CType(nudExistencia, ComponentModel.ISupportInitialize).BeginInit()
@@ -60,7 +63,7 @@ Partial Class FrmProductos
         ' txtNombre
         ' 
         txtNombre.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
-        txtNombre.Location = New System.Drawing.Point(552, 128)
+        txtNombre.Location = New System.Drawing.Point(552, 85)
         txtNombre.Margin = New System.Windows.Forms.Padding(2)
         txtNombre.MaxLength = 100
         txtNombre.Name = "txtNombre"
@@ -147,7 +150,7 @@ Partial Class FrmProductos
         ' 
         lblNombre.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblNombre.AutoSize = True
-        lblNombre.Location = New System.Drawing.Point(552, 111)
+        lblNombre.Location = New System.Drawing.Point(552, 68)
         lblNombre.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
         lblNombre.Name = "lblNombre"
         lblNombre.Size = New System.Drawing.Size(51, 15)
@@ -158,7 +161,7 @@ Partial Class FrmProductos
         ' 
         lblCategoria.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblCategoria.AutoSize = True
-        lblCategoria.Location = New System.Drawing.Point(552, 165)
+        lblCategoria.Location = New System.Drawing.Point(552, 119)
         lblCategoria.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
         lblCategoria.Name = "lblCategoria"
         lblCategoria.Size = New System.Drawing.Size(58, 15)
@@ -189,7 +192,7 @@ Partial Class FrmProductos
         cboCategoria.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         cboCategoria.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         cboCategoria.FormattingEnabled = True
-        cboCategoria.Location = New System.Drawing.Point(552, 182)
+        cboCategoria.Location = New System.Drawing.Point(552, 136)
         cboCategoria.Margin = New System.Windows.Forms.Padding(2)
         cboCategoria.Name = "cboCategoria"
         cboCategoria.Size = New System.Drawing.Size(176, 23)
@@ -199,7 +202,7 @@ Partial Class FrmProductos
         ' 
         lblPrecio.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblPrecio.AutoSize = True
-        lblPrecio.Location = New System.Drawing.Point(552, 219)
+        lblPrecio.Location = New System.Drawing.Point(552, 173)
         lblPrecio.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
         lblPrecio.Name = "lblPrecio"
         lblPrecio.Size = New System.Drawing.Size(65, 15)
@@ -211,7 +214,7 @@ Partial Class FrmProductos
         nudPrecio.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         nudPrecio.DecimalPlaces = 2
         nudPrecio.Increment = New Decimal(New Integer() {5, 0, 0, 65536})
-        nudPrecio.Location = New System.Drawing.Point(554, 236)
+        nudPrecio.Location = New System.Drawing.Point(552, 190)
         nudPrecio.Margin = New System.Windows.Forms.Padding(2)
         nudPrecio.Maximum = New Decimal(New Integer() {999999, 0, 0, 0})
         nudPrecio.Name = "nudPrecio"
@@ -221,7 +224,7 @@ Partial Class FrmProductos
         ' nudExistencia
         ' 
         nudExistencia.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
-        nudExistencia.Location = New System.Drawing.Point(554, 287)
+        nudExistencia.Location = New System.Drawing.Point(552, 249)
         nudExistencia.Margin = New System.Windows.Forms.Padding(2)
         nudExistencia.Maximum = New Decimal(New Integer() {100000, 0, 0, 0})
         nudExistencia.Name = "nudExistencia"
@@ -232,7 +235,7 @@ Partial Class FrmProductos
         ' 
         lblExistencia.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblExistencia.AutoSize = True
-        lblExistencia.Location = New System.Drawing.Point(552, 270)
+        lblExistencia.Location = New System.Drawing.Point(552, 232)
         lblExistencia.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
         lblExistencia.Name = "lblExistencia"
         lblExistencia.Size = New System.Drawing.Size(58, 15)
@@ -287,11 +290,41 @@ Partial Class FrmProductos
         lblValorInventario.TabIndex = 21
         lblValorInventario.Text = "Valor total del inventario: C$ 0.00"
         ' 
+        ' txtCodigoBarras
+        ' 
+        txtCodigoBarras.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
+        txtCodigoBarras.Location = New System.Drawing.Point(552, 288)
+        txtCodigoBarras.Name = "txtCodigoBarras"
+        txtCodigoBarras.Size = New System.Drawing.Size(174, 23)
+        txtCodigoBarras.TabIndex = 22
+        ' 
+        ' btnCategorias
+        ' 
+        btnCategorias.Location = New System.Drawing.Point(455, 14)
+        btnCategorias.Name = "btnCategorias"
+        btnCategorias.Size = New System.Drawing.Size(75, 25)
+        btnCategorias.TabIndex = 23
+        btnCategorias.Text = "Categorías"
+        btnCategorias.UseVisualStyleBackColor = True
+        ' 
+        ' btnCodigoBarras
+        ' 
+        btnCodigoBarras.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
+        btnCodigoBarras.Location = New System.Drawing.Point(589, 317)
+        btnCodigoBarras.Name = "btnCodigoBarras"
+        btnCodigoBarras.Size = New System.Drawing.Size(108, 23)
+        btnCodigoBarras.TabIndex = 24
+        btnCodigoBarras.Text = "Código de barras "
+        btnCodigoBarras.UseVisualStyleBackColor = True
+        ' 
         ' FrmProductos
         ' 
         AutoScaleDimensions = New System.Drawing.SizeF(7F, 15F)
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         ClientSize = New System.Drawing.Size(751, 439)
+        Controls.Add(btnCodigoBarras)
+        Controls.Add(btnCategorias)
+        Controls.Add(txtCodigoBarras)
         Controls.Add(lblValorInventario)
         Controls.Add(chkBajoStock)
         Controls.Add(cboFiltroCategoria)
@@ -346,4 +379,7 @@ Partial Class FrmProductos
     Friend WithEvents cboFiltroCategoria As System.Windows.Forms.ComboBox
     Friend WithEvents chkBajoStock As System.Windows.Forms.CheckBox
     Friend WithEvents lblValorInventario As System.Windows.Forms.Label
+    Friend WithEvents txtCodigoBarras As System.Windows.Forms.TextBox
+    Friend WithEvents btnCategorias As System.Windows.Forms.Button
+    Friend WithEvents btnCodigoBarras As System.Windows.Forms.Button
 End Class
