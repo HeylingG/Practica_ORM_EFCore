@@ -40,6 +40,10 @@ Partial Class FrmProductos
         nudExistencia = New System.Windows.Forms.NumericUpDown()
         lblExistencia = New System.Windows.Forms.Label()
         lblEstado = New System.Windows.Forms.Label()
+        lblFiltroCategoria = New System.Windows.Forms.Label()
+        cboFiltroCategoria = New System.Windows.Forms.ComboBox()
+        chkBajoStock = New System.Windows.Forms.CheckBox()
+        lblValorInventario = New System.Windows.Forms.Label()
         CType(dgvProductos, ComponentModel.ISupportInitialize).BeginInit()
         CType(nudPrecio, ComponentModel.ISupportInitialize).BeginInit()
         CType(nudExistencia, ComponentModel.ISupportInitialize).BeginInit()
@@ -47,18 +51,20 @@ Partial Class FrmProductos
         ' 
         ' txtBuscar
         ' 
-        txtBuscar.Location = New System.Drawing.Point(104, 24)
+        txtBuscar.Location = New System.Drawing.Point(67, 14)
+        txtBuscar.Margin = New System.Windows.Forms.Padding(2)
         txtBuscar.Name = "txtBuscar"
-        txtBuscar.Size = New System.Drawing.Size(340, 31)
+        txtBuscar.Size = New System.Drawing.Size(279, 23)
         txtBuscar.TabIndex = 0
         ' 
         ' txtNombre
         ' 
         txtNombre.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
-        txtNombre.Location = New System.Drawing.Point(676, 128)
+        txtNombre.Location = New System.Drawing.Point(552, 128)
+        txtNombre.Margin = New System.Windows.Forms.Padding(2)
         txtNombre.MaxLength = 100
         txtNombre.Name = "txtNombre"
-        txtNombre.Size = New System.Drawing.Size(249, 31)
+        txtNombre.Size = New System.Drawing.Size(176, 23)
         txtNombre.TabIndex = 1
         ' 
         ' btnBuscar
@@ -66,9 +72,10 @@ Partial Class FrmProductos
         btnBuscar.BackColor = Drawing.Color.DarkSlateBlue
         btnBuscar.Font = New System.Drawing.Font("Segoe UI", 9F, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         btnBuscar.ForeColor = Drawing.Color.White
-        btnBuscar.Location = New System.Drawing.Point(468, 25)
+        btnBuscar.Location = New System.Drawing.Point(362, 14)
+        btnBuscar.Margin = New System.Windows.Forms.Padding(2)
         btnBuscar.Name = "btnBuscar"
-        btnBuscar.Size = New System.Drawing.Size(112, 34)
+        btnBuscar.Size = New System.Drawing.Size(78, 25)
         btnBuscar.TabIndex = 2
         btnBuscar.Text = "Buscar"
         btnBuscar.UseVisualStyleBackColor = False
@@ -76,9 +83,10 @@ Partial Class FrmProductos
         ' btnNuevo
         ' 
         btnNuevo.Anchor = System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Right
-        btnNuevo.Location = New System.Drawing.Point(676, 434)
+        btnNuevo.Location = New System.Drawing.Point(554, 365)
+        btnNuevo.Margin = New System.Windows.Forms.Padding(2)
         btnNuevo.Name = "btnNuevo"
-        btnNuevo.Size = New System.Drawing.Size(112, 34)
+        btnNuevo.Size = New System.Drawing.Size(78, 25)
         btnNuevo.TabIndex = 3
         btnNuevo.Text = "Nuevo"
         btnNuevo.UseVisualStyleBackColor = True
@@ -89,9 +97,10 @@ Partial Class FrmProductos
         btnGuardar.BackColor = Drawing.Color.DarkSlateBlue
         btnGuardar.Font = New System.Drawing.Font("Segoe UI", 9F, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         btnGuardar.ForeColor = Drawing.Color.White
-        btnGuardar.Location = New System.Drawing.Point(813, 434)
+        btnGuardar.Location = New System.Drawing.Point(650, 365)
+        btnGuardar.Margin = New System.Windows.Forms.Padding(2)
         btnGuardar.Name = "btnGuardar"
-        btnGuardar.Size = New System.Drawing.Size(112, 34)
+        btnGuardar.Size = New System.Drawing.Size(78, 25)
         btnGuardar.TabIndex = 4
         btnGuardar.Text = "Guardar"
         btnGuardar.UseVisualStyleBackColor = False
@@ -102,9 +111,10 @@ Partial Class FrmProductos
         btnActualizar.BackColor = Drawing.Color.DarkSlateBlue
         btnActualizar.Font = New System.Drawing.Font("Segoe UI", 9F, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         btnActualizar.ForeColor = Drawing.Color.White
-        btnActualizar.Location = New System.Drawing.Point(676, 474)
+        btnActualizar.Location = New System.Drawing.Point(554, 389)
+        btnActualizar.Margin = New System.Windows.Forms.Padding(2)
         btnActualizar.Name = "btnActualizar"
-        btnActualizar.Size = New System.Drawing.Size(112, 34)
+        btnActualizar.Size = New System.Drawing.Size(78, 25)
         btnActualizar.TabIndex = 5
         btnActualizar.Text = "Actualizar"
         btnActualizar.UseVisualStyleBackColor = False
@@ -115,9 +125,10 @@ Partial Class FrmProductos
         btnEliminar.BackColor = Drawing.Color.FromArgb(CByte(192), CByte(0), CByte(0))
         btnEliminar.Font = New System.Drawing.Font("Segoe UI", 9F, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         btnEliminar.ForeColor = Drawing.Color.White
-        btnEliminar.Location = New System.Drawing.Point(813, 474)
+        btnEliminar.Location = New System.Drawing.Point(650, 389)
+        btnEliminar.Margin = New System.Windows.Forms.Padding(2)
         btnEliminar.Name = "btnEliminar"
-        btnEliminar.Size = New System.Drawing.Size(112, 34)
+        btnEliminar.Size = New System.Drawing.Size(78, 25)
         btnEliminar.TabIndex = 6
         btnEliminar.Text = "Eliminar"
         btnEliminar.UseVisualStyleBackColor = False
@@ -125,9 +136,10 @@ Partial Class FrmProductos
         ' lblBuscar
         ' 
         lblBuscar.AutoSize = True
-        lblBuscar.Location = New System.Drawing.Point(25, 27)
+        lblBuscar.Location = New System.Drawing.Point(18, 16)
+        lblBuscar.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
         lblBuscar.Name = "lblBuscar"
-        lblBuscar.Size = New System.Drawing.Size(67, 25)
+        lblBuscar.Size = New System.Drawing.Size(45, 15)
         lblBuscar.TabIndex = 7
         lblBuscar.Text = "Buscar:"
         ' 
@@ -135,9 +147,10 @@ Partial Class FrmProductos
         ' 
         lblNombre.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblNombre.AutoSize = True
-        lblNombre.Location = New System.Drawing.Point(676, 100)
+        lblNombre.Location = New System.Drawing.Point(552, 111)
+        lblNombre.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
         lblNombre.Name = "lblNombre"
-        lblNombre.Size = New System.Drawing.Size(78, 25)
+        lblNombre.Size = New System.Drawing.Size(51, 15)
         lblNombre.TabIndex = 8
         lblNombre.Text = "Nombre"
         ' 
@@ -145,9 +158,10 @@ Partial Class FrmProductos
         ' 
         lblCategoria.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblCategoria.AutoSize = True
-        lblCategoria.Location = New System.Drawing.Point(676, 185)
+        lblCategoria.Location = New System.Drawing.Point(552, 165)
+        lblCategoria.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
         lblCategoria.Name = "lblCategoria"
-        lblCategoria.Size = New System.Drawing.Size(88, 25)
+        lblCategoria.Size = New System.Drawing.Size(58, 15)
         lblCategoria.TabIndex = 9
         lblCategoria.Text = "Categoria"
         ' 
@@ -156,10 +170,11 @@ Partial Class FrmProductos
         dgvProductos.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left Or System.Windows.Forms.AnchorStyles.Right
         dgvProductos.BackgroundColor = Drawing.SystemColors.Control
         dgvProductos.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        dgvProductos.Location = New System.Drawing.Point(25, 80)
+        dgvProductos.Location = New System.Drawing.Point(11, 105)
+        dgvProductos.Margin = New System.Windows.Forms.Padding(2)
         dgvProductos.Name = "dgvProductos"
         dgvProductos.RowHeadersWidth = 62
-        dgvProductos.Size = New System.Drawing.Size(613, 405)
+        dgvProductos.Size = New System.Drawing.Size(510, 267)
         dgvProductos.TabIndex = 11
         ' 
         ' MySqlCommand1
@@ -174,18 +189,20 @@ Partial Class FrmProductos
         cboCategoria.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         cboCategoria.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
         cboCategoria.FormattingEnabled = True
-        cboCategoria.Location = New System.Drawing.Point(676, 222)
+        cboCategoria.Location = New System.Drawing.Point(552, 182)
+        cboCategoria.Margin = New System.Windows.Forms.Padding(2)
         cboCategoria.Name = "cboCategoria"
-        cboCategoria.Size = New System.Drawing.Size(249, 33)
+        cboCategoria.Size = New System.Drawing.Size(176, 23)
         cboCategoria.TabIndex = 12
         ' 
         ' lblPrecio
         ' 
         lblPrecio.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblPrecio.AutoSize = True
-        lblPrecio.Location = New System.Drawing.Point(676, 274)
+        lblPrecio.Location = New System.Drawing.Point(552, 219)
+        lblPrecio.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
         lblPrecio.Name = "lblPrecio"
-        lblPrecio.Size = New System.Drawing.Size(96, 25)
+        lblPrecio.Size = New System.Drawing.Size(65, 15)
         lblPrecio.TabIndex = 13
         lblPrecio.Text = "Precio (C$)"
         ' 
@@ -194,45 +211,91 @@ Partial Class FrmProductos
         nudPrecio.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         nudPrecio.DecimalPlaces = 2
         nudPrecio.Increment = New Decimal(New Integer() {5, 0, 0, 65536})
-        nudPrecio.Location = New System.Drawing.Point(676, 302)
+        nudPrecio.Location = New System.Drawing.Point(554, 236)
+        nudPrecio.Margin = New System.Windows.Forms.Padding(2)
         nudPrecio.Maximum = New Decimal(New Integer() {999999, 0, 0, 0})
         nudPrecio.Name = "nudPrecio"
-        nudPrecio.Size = New System.Drawing.Size(180, 31)
+        nudPrecio.Size = New System.Drawing.Size(126, 23)
         nudPrecio.TabIndex = 14
         ' 
         ' nudExistencia
         ' 
         nudExistencia.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
-        nudExistencia.Location = New System.Drawing.Point(676, 384)
+        nudExistencia.Location = New System.Drawing.Point(554, 287)
+        nudExistencia.Margin = New System.Windows.Forms.Padding(2)
         nudExistencia.Maximum = New Decimal(New Integer() {100000, 0, 0, 0})
         nudExistencia.Name = "nudExistencia"
-        nudExistencia.Size = New System.Drawing.Size(180, 31)
+        nudExistencia.Size = New System.Drawing.Size(126, 23)
         nudExistencia.TabIndex = 15
         ' 
         ' lblExistencia
         ' 
         lblExistencia.Anchor = System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Right
         lblExistencia.AutoSize = True
-        lblExistencia.Location = New System.Drawing.Point(676, 356)
+        lblExistencia.Location = New System.Drawing.Point(552, 270)
+        lblExistencia.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
         lblExistencia.Name = "lblExistencia"
-        lblExistencia.Size = New System.Drawing.Size(87, 25)
+        lblExistencia.Size = New System.Drawing.Size(58, 15)
         lblExistencia.TabIndex = 16
         lblExistencia.Text = "Existencia"
         ' 
         ' lblEstado
         ' 
         lblEstado.Dock = System.Windows.Forms.DockStyle.Bottom
-        lblEstado.Location = New System.Drawing.Point(0, 519)
+        lblEstado.Location = New System.Drawing.Point(0, 416)
+        lblEstado.Margin = New System.Windows.Forms.Padding(2, 0, 2, 0)
         lblEstado.Name = "lblEstado"
-        lblEstado.Size = New System.Drawing.Size(957, 38)
+        lblEstado.Size = New System.Drawing.Size(751, 23)
         lblEstado.TabIndex = 17
         lblEstado.Text = "Estado"
         ' 
+        ' lblFiltroCategoria
+        ' 
+        lblFiltroCategoria.AutoSize = True
+        lblFiltroCategoria.Location = New System.Drawing.Point(18, 60)
+        lblFiltroCategoria.Name = "lblFiltroCategoria"
+        lblFiltroCategoria.Size = New System.Drawing.Size(113, 15)
+        lblFiltroCategoria.TabIndex = 18
+        lblFiltroCategoria.Text = "Filtrar por categoría:"
+        ' 
+        ' cboFiltroCategoria
+        ' 
+        cboFiltroCategoria.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
+        cboFiltroCategoria.FormattingEnabled = True
+        cboFiltroCategoria.Location = New System.Drawing.Point(137, 60)
+        cboFiltroCategoria.Name = "cboFiltroCategoria"
+        cboFiltroCategoria.Size = New System.Drawing.Size(209, 23)
+        cboFiltroCategoria.TabIndex = 19
+        ' 
+        ' chkBajoStock
+        ' 
+        chkBajoStock.AutoSize = True
+        chkBajoStock.Location = New System.Drawing.Point(356, 62)
+        chkBajoStock.Name = "chkBajoStock"
+        chkBajoStock.Size = New System.Drawing.Size(165, 19)
+        chkBajoStock.TabIndex = 20
+        chkBajoStock.Text = "Solo existencia menor a 10"
+        chkBajoStock.UseVisualStyleBackColor = True
+        ' 
+        ' lblValorInventario
+        ' 
+        lblValorInventario.Anchor = System.Windows.Forms.AnchorStyles.Bottom Or System.Windows.Forms.AnchorStyles.Left
+        lblValorInventario.AutoSize = True
+        lblValorInventario.Location = New System.Drawing.Point(12, 389)
+        lblValorInventario.Name = "lblValorInventario"
+        lblValorInventario.Size = New System.Drawing.Size(179, 15)
+        lblValorInventario.TabIndex = 21
+        lblValorInventario.Text = "Valor total del inventario: C$ 0.00"
+        ' 
         ' FrmProductos
         ' 
-        AutoScaleDimensions = New System.Drawing.SizeF(10F, 25F)
+        AutoScaleDimensions = New System.Drawing.SizeF(7F, 15F)
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        ClientSize = New System.Drawing.Size(957, 557)
+        ClientSize = New System.Drawing.Size(751, 439)
+        Controls.Add(lblValorInventario)
+        Controls.Add(chkBajoStock)
+        Controls.Add(cboFiltroCategoria)
+        Controls.Add(lblFiltroCategoria)
         Controls.Add(lblEstado)
         Controls.Add(lblExistencia)
         Controls.Add(nudExistencia)
@@ -250,6 +313,7 @@ Partial Class FrmProductos
         Controls.Add(btnBuscar)
         Controls.Add(txtNombre)
         Controls.Add(txtBuscar)
+        Margin = New System.Windows.Forms.Padding(2)
         Name = "FrmProductos"
         Text = "FrmProductos"
         CType(dgvProductos, ComponentModel.ISupportInitialize).EndInit()
@@ -278,4 +342,8 @@ Partial Class FrmProductos
     Friend WithEvents nudExistencia As System.Windows.Forms.NumericUpDown
     Friend WithEvents lblExistencia As System.Windows.Forms.Label
     Friend WithEvents lblEstado As System.Windows.Forms.Label
+    Friend WithEvents lblFiltroCategoria As System.Windows.Forms.Label
+    Friend WithEvents cboFiltroCategoria As System.Windows.Forms.ComboBox
+    Friend WithEvents chkBajoStock As System.Windows.Forms.CheckBox
+    Friend WithEvents lblValorInventario As System.Windows.Forms.Label
 End Class
