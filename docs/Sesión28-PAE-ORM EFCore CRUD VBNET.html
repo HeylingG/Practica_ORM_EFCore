@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORM y CRUD con EF Core</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --scale:1;
+  --bg:#f5f8fe;
+  --surface:#ffffff;
+  --surface-2:#eef3fd;
+  --border:#d5e0f5;
+  --text:#14213d;
+  --muted:#52607a;
+  --primary:#1546a0;
+  --primary-strong:#0b2a5b;
+  --accent:#2f6fe0;
+  --accent-soft:#e3ecfd;
+  --ok:#0f7a4f; --ok-soft:#e2f5ec;
+  --warn:#9a5b00; --warn-soft:#fff3dc;
+  --bad:#b4232c; --bad-soft:#fde6e7;
+  --code-bg:#0d1b36; --code-text:#e4ecfb;
+  --tok-kw:#7fb4ff; --tok-str:#ffd18a; --tok-com:#7f93b8; --tok-num:#9ff0c9; --tok-type:#c9b6ff;
+  --shadow:0 1px 2px rgba(11,42,91,.06),0 8px 24px rgba(11,42,91,.07);
+  --radius:14px;
+  --sidebar:280px;
+}
+:root:not([data-theme="light"]){color-scheme:light}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#081226;--surface:#0f1d3a;--surface-2:#132548;--border:#223a66;--text:#e6edf9;--muted:#9fb0cf;
+    --primary:#7fb0ff;--primary-strong:#cfe0ff;--accent:#5b9bff;--accent-soft:#16305e;
+    --ok:#4fd39b;--ok-soft:#0f3328;--warn:#ffc266;--warn-soft:#3a2a0d;--bad:#ff7d84;--bad-soft:#3d1519;
+    --code-bg:#060e1f;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);color-scheme:dark}
+}
+:root[data-theme="dark"]{
+  --bg:#081226;--surface:#0f1d3a;--surface-2:#132548;--border:#223a66;--text:#e6edf9;--muted:#9fb0cf;
+  --primary:#7fb0ff;--primary-strong:#cfe0ff;--accent:#5b9bff;--accent-soft:#16305e;
+  --ok:#4fd39b;--ok-soft:#0f3328;--warn:#ffc266;--warn-soft:#3a2a0d;--bad:#ff7d84;--bad-soft:#3d1519;
+  --code-bg:#060e1f;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);color-scheme:dark}
+
+*{box-sizing:border-box}
+html{font-size:calc(17px * var(--scale));scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Atkinson Hyperlegible",system-ui,sans-serif;line-height:1.65}
+h1,h2,h3,h4{font-family:"Space Grotesk",system-ui,sans-serif;line-height:1.2;color:var(--primary-strong)}
+h2{font-size:1.8rem;margin:0 0 .4em;display:flex;align-items:center;gap:.6rem}
+h2 .num{font-size:.85rem;background:var(--primary);color:var(--surface);border-radius:8px;padding:.2rem .55rem;font-weight:700}
+h3{font-size:1.25rem;margin:1.8em 0 .5em}
+h4{font-size:1.05rem;margin:1.2em 0 .4em}
+p{margin:.6em 0}
+code{font-family:"JetBrains Mono",monospace;font-size:.88em;background:var(--accent-soft);color:var(--primary-strong);padding:.08em .35em;border-radius:5px}
+a{color:var(--accent)}
+
+/* Progreso y barra superior */
+#progress{position:fixed;top:0;left:0;height:4px;width:0;background:linear-gradient(90deg,var(--accent),#7fb4ff);z-index:100;transition:width .1s}
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.6rem 1.2rem;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.topbar .brand{font-family:"Space Grotesk",system-ui,sans-serif;font-weight:700;color:var(--primary-strong);font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tools{display:flex;gap:.35rem;flex-shrink:0}
+.tools button,.menu-btn{font:inherit;font-size:.85rem;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:9px;padding:.35rem .65rem;cursor:pointer;font-weight:700}
+.tools button:hover,.menu-btn:hover{border-color:var(--accent);color:var(--accent)}
+.menu-btn{display:none}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:var(--sidebar) minmax(0,1fr);max-width:1400px;margin:0 auto}
+nav.sidebar{position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;padding:1.4rem 1rem 2rem;border-right:1px solid var(--border)}
+nav.sidebar .label{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 .6rem .6rem}
+nav.sidebar a{display:block;text-decoration:none;color:var(--muted);padding:.42rem .7rem;border-radius:9px;font-size:.9rem;border-left:3px solid transparent}
+nav.sidebar a.sub{padding-left:1.6rem;font-size:.84rem}
+nav.sidebar a:hover{background:var(--surface-2);color:var(--text)}
+nav.sidebar a.active{background:var(--accent-soft);color:var(--primary-strong);border-left-color:var(--accent);font-weight:700}
+main{padding:0 2rem 4rem;min-width:0}
+
+/* Portada */
+.hero{margin:1.6rem 0 2rem;border-radius:22px;padding:2.2rem 2.4rem;color:#fff;background:radial-gradient(circle at 85% 20%,rgba(127,180,255,.35),transparent 45%),linear-gradient(135deg,#0b2a5b 0%,#1546a0 60%,#2f6fe0 100%);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hero h1{color:#fff;font-size:2.4rem;margin:.5rem 0 .4rem}
+.hero p{color:#dbe7ff;max-width:60ch}
+.hero .logos{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.2rem}
+.hero-logo{height:72px;width:auto;display:block}
+.hero-org{text-align:right;color:#dbe7ff;font-family:"Space Grotesk",system-ui,sans-serif;font-size:.85rem;line-height:1.35;border-left:2px solid rgba(255,255,255,.35);padding-left:.9rem}
+.hero-org b{display:block;color:#fff;font-size:1rem}
+.brand-logo{height:22px;width:auto;flex-shrink:0}
+.foot-logo{height:42px;width:auto;margin:0 auto .6rem;display:block}
+.on-dark{display:none!important}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .on-light{display:none!important}:root:not([data-theme="light"]) .on-dark{display:block!important}}
+:root[data-theme="dark"] .on-light{display:none!important}:root[data-theme="dark"] .on-dark{display:block!important}
+/* Árbol de carpetas */
+.tree{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.84rem;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.2rem;line-height:1.75;overflow-x:auto;white-space:pre}
+.tree .d{color:var(--primary);font-weight:700}.tree .c{color:var(--muted);font-style:italic}.tree .k{color:var(--ok);font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1.1rem}
+.chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:#fff;border-radius:999px;padding:.25rem .75rem;font-size:.8rem;font-weight:700}
+.hero svg.deco{position:absolute;right:-30px;bottom:-30px;opacity:.16;width:300px}
+
+section.block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem 2.2rem;margin:0 0 1.6rem;box-shadow:var(--shadow)}
+.lead{font-size:1.08rem;color:var(--muted)}
+
+/* Tarjetas */
+.grid{display:grid;gap:1rem}
+.g2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.card{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem}
+.card h4{margin:.1rem 0 .4rem;display:flex;gap:.5rem;align-items:center}
+.card .ico{width:34px;height:34px;border-radius:9px;background:var(--primary);color:var(--surface);display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-family:"Space Grotesk",system-ui,sans-serif;flex-shrink:0}
+.card p{margin:.2rem 0;font-size:.95rem}
+
+.callout{border-radius:12px;padding:.9rem 1.1rem;margin:1.1rem 0;border:1px solid;display:flex;gap:.8rem}
+.callout .t{font-weight:700;font-family:"Space Grotesk",system-ui,sans-serif}
+.callout.info{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+.callout.ok{background:var(--ok-soft);border-color:color-mix(in srgb,var(--ok) 35%,transparent)}
+.callout.warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
+.callout.bad{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.callout .badge{font-size:1.3rem;line-height:1}
+
+figure{margin:1.4rem 0;background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:1rem}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:.85rem;color:var(--muted);text-align:center;margin-top:.5rem}
+
+/* SVG temas */
+.s-box{fill:var(--surface);stroke:var(--border);stroke-width:1.5}
+.s-box-p{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.6}
+.s-box-d{fill:var(--primary);stroke:var(--primary)}
+.s-head{fill:var(--primary)}
+.s-t{fill:var(--text);font-family:"Atkinson Hyperlegible",sans-serif;font-size:14px}
+.s-tm{fill:var(--muted);font-family:"Atkinson Hyperlegible",sans-serif;font-size:12.5px}
+.s-th{fill:#fff;font-family:"Space Grotesk",sans-serif;font-size:15px;font-weight:700}
+.s-tt{fill:var(--primary-strong);font-family:"Space Grotesk",sans-serif;font-size:16px;font-weight:700}
+.s-code{fill:var(--text);font-family:"JetBrains Mono",monospace;font-size:12.5px}
+.s-line{stroke:var(--accent);stroke-width:2;fill:none}
+.s-line-m{stroke:var(--muted);stroke-width:1.6;fill:none;stroke-dasharray:5 5}
+.s-arrow{fill:var(--accent)}
+
+/* Tablas */
+.tbl{width:100%;border-collapse:collapse;font-size:.93rem;margin:1rem 0}
+.tbl th{background:var(--primary);color:var(--surface);text-align:left;padding:.6rem .7rem;font-family:"Space Grotesk",system-ui,sans-serif}
+.tbl td{border-bottom:1px solid var(--border);padding:.55rem .7rem;vertical-align:top}
+.tbl tr:nth-child(even) td{background:var(--surface-2)}
+.tbl-wrap{overflow-x:auto}
+
+/* Código */
+.code{margin:1rem 0;border-radius:12px;overflow:hidden;border:1px solid #1d3263;background:var(--code-bg)}
+.code-head{display:flex;justify-content:space-between;align-items:center;padding:.45rem .9rem;background:#13254b;color:#cfe0ff;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.78rem}
+.code-head .lang{background:#2f6fe0;color:#fff;border-radius:5px;padding:.05rem .45rem;margin-right:.5rem;font-weight:700}
+.code-head button{font:inherit;background:transparent;border:1px solid #3a5592;color:#cfe0ff;border-radius:6px;padding:.15rem .55rem;cursor:pointer}
+.code-head button:hover{background:#2f6fe0;border-color:#2f6fe0}
+.code pre{margin:0;padding:1rem 1.1rem;overflow-x:auto;color:var(--code-text);font-family:"JetBrains Mono",monospace;font-size:.82rem;line-height:1.6;tab-size:4}
+.code pre code{background:none;padding:0;color:inherit;font-size:inherit;border-radius:0}
+.tk-kw{color:var(--tok-kw);font-weight:600}.tk-str{color:var(--tok-str)}.tk-com{color:var(--tok-com);font-style:italic}.tk-num{color:var(--tok-num)}.tk-type{color:var(--tok-type)}
+
+/* Pasos */
+.step{display:grid;grid-template-columns:44px 1fr;gap:1rem;margin:1.4rem 0}
+.step .n{width:44px;height:44px;border-radius:12px;background:var(--primary);color:var(--surface);display:flex;align-items:center;justify-content:center;font-family:"Space Grotesk",system-ui,sans-serif;font-weight:700;font-size:1.1rem}
+.step h4{margin:.35rem 0 .3rem}
+.kbd{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.8em;border:1px solid var(--border);border-bottom-width:3px;border-radius:6px;padding:.05em .4em;background:var(--surface)}
+.path{font-weight:700;color:var(--primary)}
+
+/* Componentes interactivos */
+.lab{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:1.2rem;margin:1.3rem 0}
+.lab-title{font-family:"Space Grotesk",system-ui,sans-serif;font-weight:700;color:var(--primary-strong);display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem}
+.lab-title::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.btn{font:inherit;font-size:.88rem;font-weight:700;border-radius:9px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);padding:.42rem .8rem;cursor:pointer;transition:.15s}
+.btn:hover:not(:disabled){background:var(--accent);color:#fff}
+.btn.primary{background:var(--accent);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-row{display:flex;flex-wrap:wrap;gap:.45rem;margin:.6rem 0}
+
+/* Explorador de mapeo */
+.map-grid{display:grid;grid-template-columns:1fr 70px 1fr;align-items:stretch;gap:0}
+.map-col{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.map-col .hd{background:var(--primary);color:var(--surface);padding:.55rem .8rem;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.85rem;font-weight:600}
+.map-row{padding:.5rem .8rem;border-top:1px solid var(--border);font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.82rem;cursor:pointer;transition:.15s;display:flex;justify-content:space-between;gap:.5rem}
+.map-row span:last-child{color:var(--muted)}
+.map-row:hover{background:var(--surface-2)}
+.map-row.on{background:var(--accent);color:#fff}
+.map-row.on span:last-child{color:#e3ecfd}
+.map-mid{display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:var(--accent)}
+.map-explain{margin-top:.9rem;background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:.8rem 1rem;min-height:3.2rem}
+
+/* Simulador de estados */
+.states{display:flex;flex-wrap:wrap;gap:.5rem;margin:.6rem 0}
+.state{padding:.4rem .8rem;border-radius:999px;border:1.5px solid var(--border);font-weight:700;font-size:.85rem;color:var(--muted);background:var(--surface);transition:.2s}
+.state.on{color:#fff;border-color:transparent;transform:scale(1.06)}
+.state.on[data-s="Detached"]{background:#6b7a96}
+.state.on[data-s="Added"]{background:#0f7a4f}
+.state.on[data-s="Unchanged"]{background:#1546a0}
+.state.on[data-s="Modified"]{background:#b56a00}
+.state.on[data-s="Deleted"]{background:#b4232c}
+.console{background:var(--code-bg);color:var(--code-text);font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.8rem;border-radius:10px;padding:.8rem 1rem;min-height:110px;max-height:240px;overflow-y:auto;white-space:pre-wrap}
+.console .c-sql{color:var(--tok-str)}.console .c-ok{color:var(--tok-num)}.console .c-bad{color:#ff8b92}.console .c-info{color:var(--tok-com)}
+.entity-card{display:inline-block;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.6rem .9rem;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.82rem}
+
+/* Pestañas */
+.tabs{display:flex;flex-wrap:wrap;gap:.35rem;border-bottom:2px solid var(--border);margin-bottom:.8rem}
+.tab{font:inherit;font-weight:700;background:none;border:none;padding:.5rem .9rem;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none}.tab-panel.on{display:block}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.split .code{margin:0}
+
+/* Demo async */
+.fake-form{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.fake-form .titlebar{background:var(--primary);color:#fff;font-size:.82rem;padding:.35rem .7rem;font-weight:700;display:flex;justify-content:space-between}
+.fake-form .body{padding:.8rem;display:flex;flex-direction:column;gap:.55rem}
+.fake-form.frozen{filter:grayscale(.7) brightness(.9)}
+.fake-form.frozen .body{cursor:wait}
+.spinner{width:26px;height:26px;border-radius:50%;border:4px solid var(--accent-soft);border-top-color:var(--accent);animation:spin 1s linear infinite}
+.paused .spinner{animation-play-state:paused}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fake-input{font:inherit;font-size:.85rem;padding:.35rem .5rem;border:1px solid var(--border);border-radius:7px;background:var(--surface-2);color:var(--text);width:100%}
+
+/* Concurrencia */
+.conc{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem}
+.user{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.8rem}
+.user h5{margin:0 0 .4rem;font-family:"Space Grotesk",system-ui,sans-serif;font-size:.95rem;color:var(--primary-strong)}
+.db-box{background:var(--primary);color:#fff;border-radius:12px;padding:.8rem;font-family:"JetBrains Mono",ui-monospace,Consolas,monospace;font-size:.82rem}
+.db-box b{font-family:"Space Grotesk",system-ui,sans-serif;font-size:.95rem}
+.small{font-size:.82rem;color:var(--muted)}
+.user .small{display:block;margin:.3rem 0}
+
+.err{border:1px solid var(--border);border-radius:12px;margin:.7rem 0;overflow:hidden;background:var(--surface)}
+.err summary{cursor:pointer;padding:.75rem 1rem;font-weight:700;list-style:none;display:flex;gap:.6rem;align-items:flex-start}
+.err summary::-webkit-details-marker{display:none}
+.err summary::before{content:"!";flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--bad);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem}
+.err summary code{background:var(--bad-soft);color:var(--bad)}
+.err[open] summary{background:var(--surface-2)}
+.err .ebody{padding:.4rem 1.1rem 1rem}
+
+footer{text-align:center;color:var(--muted);font-size:.85rem;padding:2rem 1rem}
+
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr}
+  nav.sidebar{position:fixed;left:0;top:58px;width:290px;background:var(--surface);z-index:60;transform:translateX(-100%);transition:transform .25s;box-shadow:var(--shadow)}
+  nav.sidebar.open{transform:none}
+  .menu-btn{display:inline-block}
+  main{padding:0 1rem 3rem}
+  section.block{padding:1.3rem 1.1rem}
+  .split,.conc{grid-template-columns:1fr}
+  .map-grid{grid-template-columns:1fr 40px 1fr}
+  .hero{padding:1.6rem 1.3rem}.hero h1{font-size:1.8rem}
+  .topbar .brand{font-size:.8rem}
+}
+@media print{
+  :root{--bg:#fff;--surface:#fff;--surface-2:#f4f7fd;--text:#000;--muted:#333;--code-bg:#f4f6fb;--code-text:#111;--tok-kw:#0b3ea8;--tok-str:#8a4b00;--tok-com:#5a6578;--tok-num:#056b44;--tok-type:#5a2fb0}
+  html{font-size:11.5pt}
+  .topbar,nav.sidebar,#progress,.code-head button,.btn-row,.btn,.lab{display:none!important}
+  .layout{display:block}main{padding:0}
+  section.block{box-shadow:none;break-inside:auto;border:none;padding:0;margin-bottom:1.2rem}
+  .hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .code,figure,.callout,.card,.err{break-inside:avoid}
+  .code{border:1px solid #999}.code-head{background:#e8edf7;color:#000}
+  .err:not([open]) .ebody{display:block}
+  details.err > .ebody{display:block}
+  h2,h3{break-after:avoid}
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<header class="topbar">
+  <div style="display:flex;gap:.6rem;align-items:center;min-width:0">
+    <button class="menu-btn" id="menuBtn" aria-label="Abrir índice">☰ Índice</button>
+    <img class="brand-logo on-light" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfoAAAEgCAYAAABcsLEAAAAACXBIWXMAAC4jAAAuIwF4pT92AAAFc0lEQVR4nO3YsW3UYBiA4R90PbS4gRGyAE7YJCPQXQnp8Ba3CcdNwAipbo4oEg0SEkQ40uX180ju/X/f2a/Or959/HY7xni8WMfP82n/ec1ZTvNiR8AlOpxP+8Oa9zXNy9Gm17UbY3wYY1yXDhVkR8Aleo4oe9et7HXqNADAb4QeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDCdpbLRt1Z/CZ92foAXgDP5sqEnk06n/ZfbX57pnkR+gvn2VyfT/cAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAELazXPh/07zcjDG+G+WqPp1P+2PoPPyDaV4ed35tVuvxjx4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDCdpb7ItyPMX5sfQgAPJ3QvwDn0/4wxjhsfQ4APJ1P9wAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQtrPc1V1N83KMnYm/e2tGbNDtNC83Kx/7yg9pXUK/vjdjjOvaoQD+4P2viwvm0z0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCE7cYYRwsGLtD9M9zSnUWzKWOMB5yAKetxEWftAAAAAElFTkSuQmCC" alt=""><img class="brand-logo on-dark" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAecAAAEVCAYAAADaVy1GAAAACXBIWXMAAC4jAAAuIwF4pT92AAAFJ0lEQVR4nO3Y4Y0SURhA0U9DAZZACXQgVqIl2IHbwVqCpbAdrB1QAh1gTPhr3CwTchnOSd5v8t7HzM28D+fzeT8zfxfvd7ispZgJcCu/Zua44G89mdzVjptLBH7c+UYKlo6zmQC3cFg4zt5d13v5eO87AIC1EWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIjZGAgr9Xtmvhvuqu1m5vnRDyHoy6MfwAJO4sxanWbmYLpwc567BbjWBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgJiNgcCbfLssrrN3fqv3c2Z2j34IV3oVZ3ib7cx8dlbwXzvPyvVcawNAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0DMxkCSni4LgAfkyxkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBiNgayiO3M7FewD/5t62xYqd3C2/rkj3I9cV7G18sCuDfPJtbjWhsAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBiNjNznJkXgwHuzMm7i1Waef0DS4Qf5cvzIJcAAAAASUVORK5CYII=" alt=""><span class="brand">Programación de Aplicaciones de Escritorio · ORM con EF Core</span>
+  </div>
+  <div class="tools">
+    <button id="fontDown" title="Reducir texto">A−</button>
+    <button id="fontReset" title="Tamaño normal">A</button>
+    <button id="fontUp" title="Aumentar texto">A+</button>
+    <button id="themeBtn" title="Cambiar tema">◐ Tema</button>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="sidebar" id="sidebar">
+  <div class="label">Contenido</div>
+  <a href="#intro">1 · Introducción</a>
+  <a href="#que-es">2 · ¿Qué es un ORM?</a>
+  <a href="#conceptos">3 · Conceptos fundamentales</a>
+  <a href="#arquitectura">4 · Arquitectura de EF Core</a>
+  <a href="#ado-vs-orm">5 · ADO.NET vs. ORM</a>
+  <a href="#estados">6 · Ciclo de vida de una entidad</a>
+  <a href="#crud-linq">7 · CRUD: LINQ ↔ SQL</a>
+  <a href="#async">8 · Asincronía y concurrencia</a>
+  <a href="#practica">9 · Práctica guiada</a>
+  <a class="sub" href="#p-bd">9.1 Base de datos</a>
+  <a class="sub" href="#p-proyecto">9.2 Proyecto y NuGet</a>
+  <a class="sub" href="#p-entidades">9.3 Conexión y entidades</a>
+  <a class="sub" href="#p-contexto">9.4 El DbContext</a>
+  <a class="sub" href="#p-form">9.5 Diseño del formulario</a>
+  <a class="sub" href="#p-codigo">9.6 Código CRUD</a>
+  <a class="sub" href="#p-probar">9.7 Probar y ver el SQL</a>
+  <a href="#refuerzo">10 · Ejercicio de refuerzo</a>
+  <a href="#errores">11 · Errores comunes</a>
+  <a href="#tarea">12 · Tarea</a>
+  <a href="#github">13 · Entrega en GitHub</a>
+</nav>
+
+<main>
+<!-- ============ PORTADA ============ -->
+<div class="hero">
+  <div class="logos">
+    <img class="hero-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAecAAAEVCAYAAADaVy1GAAAACXBIWXMAAC4jAAAuIwF4pT92AAAFJ0lEQVR4nO3Y4Y0SURhA0U9DAZZACXQgVqIl2IHbwVqCpbAdrB1QAh1gTPhr3CwTchnOSd5v8t7HzM28D+fzeT8zfxfvd7ispZgJcCu/Zua44G89mdzVjptLBH7c+UYKlo6zmQC3cFg4zt5d13v5eO87AIC1EWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIjZGAgr9Xtmvhvuqu1m5vnRDyHoy6MfwAJO4sxanWbmYLpwc567BbjWBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgJiNgcCbfLssrrN3fqv3c2Z2j34IV3oVZ3ib7cx8dlbwXzvPyvVcawNAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0DMxkCSni4LgAfkyxkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBiNgayiO3M7FewD/5t62xYqd3C2/rkj3I9cV7G18sCuDfPJtbjWhsAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBiNjNznJkXgwHuzMm7i1Waef0DS4Qf5cvzIJcAAAAASUVORK5CYII=" alt="Logo institucional">
+    <div class="hero-org"><b>Ingeniería en Sistemas</b>Programación de Aplicaciones de Escritorio</div>
+  </div>
+  <div style="font-family:'Space Grotesk',system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;font-size:.8rem;color:#bcd3ff">Unidad · Acceso a datos con VB.NET</div>
+  <h1>Mapeo Objeto‑Relacional (ORM): operaciones CRUD con Entity Framework Core</h1>
+  <p>De escribir SQL a mano a trabajar con objetos: cómo un ORM traduce clases de Visual Basic .NET en tablas de MariaDB, y cómo construir un mantenimiento completo de productos en Windows Forms.</p>
+  <div class="chips">
+    <span class="chip">Visual Studio 2026</span>
+    <span class="chip">.NET 10</span>
+    <span class="chip">Windows Forms</span>
+    <span class="chip">Visual Basic .NET</span>
+    <span class="chip">MariaDB</span>
+    <span class="chip">EF Core + Pomelo</span>
+  </div>
+  <svg class="deco" viewBox="0 0 200 200" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="6"><ellipse cx="100" cy="40" rx="70" ry="22"/><path d="M30 40v120c0 12 31 22 70 22s70-10 70-22V40"/><path d="M30 80c0 12 31 22 70 22s70-10 70-22M30 120c0 12 31 22 70 22s70-10 70-22"/></g></svg>
+</div>
+
+<!-- ============ 1. INTRODUCCIÓN ============ -->
+<section class="block" id="intro">
+  <h2><span class="num">1</span> Introducción: el problema de los dos mundos</h2>
+  <p class="lead">En las sesiones anteriores conectamos formularios a MariaDB con <code>MySqlConnection</code>, <code>MySqlDataAdapter</code> y <code>DataTable</code>. Funciona, pero obliga a pensar en <strong>dos idiomas a la vez</strong>.</p>
+  <p>Nuestro programa piensa en <strong>objetos</strong>: un <code>Producto</code> tiene un nombre, un precio y pertenece a una <code>Categoria</code>. La base de datos, en cambio, piensa en <strong>tablas, filas y columnas</strong> unidas por claves foráneas. Cada vez que guardamos o leemos datos tenemos que traducir manualmente de un mundo al otro: armar cadenas SQL, crear parámetros, leer columnas por nombre y convertir tipos.</p>
+  <p>A esa diferencia entre ambos modelos se le llama <strong>desajuste de impedancia objeto‑relacional</strong> (<em>object‑relational impedance mismatch</em>). Un <strong>ORM</strong> es la herramienta que hace esa traducción por nosotros.</p>
+
+  <figure>
+    <svg viewBox="0 0 900 300" role="img" aria-label="Diferencias entre el mundo de objetos y el mundo relacional">
+      <defs><marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="s-arrow"/></marker></defs>
+      <text x="170" y="28" text-anchor="middle" class="s-tt">Mundo de objetos (VB.NET)</text>
+      <rect x="40" y="45" width="260" height="210" rx="14" class="s-box"/>
+      <rect x="60" y="62" width="220" height="34" rx="8" class="s-head"/>
+      <text x="170" y="84" text-anchor="middle" class="s-th">Producto</text>
+      <text x="74" y="122" class="s-code">Nombre As String</text>
+      <text x="74" y="146" class="s-code">Precio As Decimal</text>
+      <text x="74" y="170" class="s-code">Existencia As Integer</text>
+      <text x="74" y="194" class="s-code">Categoria As Categoria</text>
+      <text x="170" y="234" text-anchor="middle" class="s-tm">Referencias, herencia, listas</text>
+
+      <text x="730" y="28" text-anchor="middle" class="s-tt">Mundo relacional (MariaDB)</text>
+      <rect x="600" y="45" width="260" height="210" rx="14" class="s-box"/>
+      <rect x="620" y="62" width="220" height="34" rx="8" class="s-head"/>
+      <text x="730" y="84" text-anchor="middle" class="s-th">productos</text>
+      <text x="634" y="122" class="s-code">nombre VARCHAR(100)</text>
+      <text x="634" y="146" class="s-code">precio DECIMAL(10,2)</text>
+      <text x="634" y="170" class="s-code">existencia INT</text>
+      <text x="634" y="194" class="s-code">id_categoria INT (FK)</text>
+      <text x="730" y="234" text-anchor="middle" class="s-tm">Filas, columnas, claves foráneas</text>
+
+      <circle cx="450" cy="150" r="62" class="s-box-p"/>
+      <text x="450" y="146" text-anchor="middle" class="s-tt">¿Quién</text>
+      <text x="450" y="168" text-anchor="middle" class="s-tt">traduce?</text>
+      <path d="M305 120 L384 135" class="s-line-m"/>
+      <path d="M516 135 L595 120" class="s-line-m"/>
+      <path d="M305 185 L384 168" class="s-line-m"/>
+      <path d="M516 168 L595 185" class="s-line-m"/>
+      <text x="450" y="280" text-anchor="middle" class="s-tm">Sin ORM: el programador escribe SQL, parámetros y conversiones en cada operación.</text>
+    </svg>
+    <figcaption>Figura 1. Los dos modelos describen la misma información con conceptos distintos.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 2. QUÉ ES UN ORM ============ -->
+<section class="block" id="que-es">
+  <h2><span class="num">2</span> ¿Qué es un ORM?</h2>
+  <p>Un <strong>ORM (Object‑Relational Mapper, Mapeador Objeto‑Relacional)</strong> es una biblioteca que establece una correspondencia entre las <strong>clases</strong> de nuestro programa y las <strong>tablas</strong> de una base de datos relacional. Con esa correspondencia, el ORM:</p>
+  <div class="grid g3">
+    <div class="card"><h4><span class="ico">↓</span>Genera el SQL</h4><p>Convierte consultas escritas en VB.NET (LINQ) en sentencias <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code> y <code>DELETE</code>.</p></div>
+    <div class="card"><h4><span class="ico">⇄</span>Materializa objetos</h4><p>Transforma cada fila devuelta por la base de datos en una instancia de una clase, con sus propiedades ya convertidas al tipo correcto.</p></div>
+    <div class="card"><h4><span class="ico">◉</span>Rastrea cambios</h4><p>Recuerda qué objetos son nuevos, cuáles se modificaron y cuáles se eliminaron, y al guardar envía solo lo necesario.</p></div>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 900 260" role="img" aria-label="El ORM como puente entre objetos y tablas">
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="s-arrow"/></marker></defs>
+      <rect x="30" y="60" width="220" height="140" rx="14" class="s-box"/>
+      <text x="140" y="95" text-anchor="middle" class="s-tt">Código VB.NET</text>
+      <text x="140" y="125" text-anchor="middle" class="s-code">ctx.Productos.Add(p)</text>
+      <text x="140" y="150" text-anchor="middle" class="s-code">ctx.SaveChanges()</text>
+      <text x="140" y="180" text-anchor="middle" class="s-tm">Trabajo con objetos</text>
+
+      <rect x="340" y="40" width="220" height="180" rx="18" class="s-box-d"/>
+      <text x="450" y="80" text-anchor="middle" class="s-th" style="font-size:20px">ORM</text>
+      <text x="450" y="104" text-anchor="middle" class="s-th" style="font-size:13px;font-weight:500">Entity Framework Core</text>
+      <text x="450" y="140" text-anchor="middle" class="s-th" style="font-size:12.5px;font-weight:500">• Mapeo clase ↔ tabla</text>
+      <text x="450" y="162" text-anchor="middle" class="s-th" style="font-size:12.5px;font-weight:500">• Traducción LINQ → SQL</text>
+      <text x="450" y="184" text-anchor="middle" class="s-th" style="font-size:12.5px;font-weight:500">• Rastreo de cambios</text>
+
+      <rect x="650" y="60" width="220" height="140" rx="14" class="s-box"/>
+      <text x="760" y="95" text-anchor="middle" class="s-tt">MariaDB</text>
+      <text x="760" y="125" text-anchor="middle" class="s-code">INSERT INTO productos</text>
+      <text x="760" y="150" text-anchor="middle" class="s-code">(nombre, precio…)</text>
+      <text x="760" y="180" text-anchor="middle" class="s-tm">Trabajo con tablas</text>
+
+      <path d="M255 110 L333 110" class="s-line" marker-end="url(#ar2)"/>
+      <path d="M567 110 L643 110" class="s-line" marker-end="url(#ar2)"/>
+      <path d="M643 160 L567 160" class="s-line" marker-end="url(#ar2)"/>
+      <path d="M333 160 L255 160" class="s-line" marker-end="url(#ar2)"/>
+      <text x="294" y="100" text-anchor="middle" class="s-tm">objetos</text>
+      <text x="605" y="100" text-anchor="middle" class="s-tm">SQL</text>
+      <text x="605" y="180" text-anchor="middle" class="s-tm">filas</text>
+      <text x="294" y="180" text-anchor="middle" class="s-tm">objetos</text>
+    </svg>
+    <figcaption>Figura 2. El ORM se ubica entre la aplicación y la base de datos y traduce en ambas direcciones.</figcaption>
+  </figure>
+
+  <h3>ORM más comunes</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Plataforma</th><th>ORM</th><th>Observación</th></tr>
+    <tr><td>.NET (VB.NET / C#)</td><td><strong>Entity Framework Core</strong></td><td>ORM oficial de Microsoft. Es el que usaremos.</td></tr>
+    <tr><td>.NET</td><td>Dapper</td><td>“Micro‑ORM”: mapea resultados a objetos, pero el SQL lo escribe el programador.</td></tr>
+    <tr><td>Java</td><td>Hibernate / JPA</td><td>Referencia histórica de los ORM completos.</td></tr>
+    <tr><td>Python</td><td>SQLAlchemy, Django ORM</td><td>Mismos conceptos con otra sintaxis.</td></tr>
+  </table></div>
+
+  <div class="callout info"><span class="badge">💡</span><div><span class="t">Idea central.</span> Un ORM no elimina el SQL: lo <em>genera</em> por nosotros. Saber SQL sigue siendo indispensable para entender qué hace el ORM y para diagnosticar problemas.</div></div>
+</section>
+
+<!-- ============ 3. CONCEPTOS ============ -->
+<section class="block" id="conceptos">
+  <h2><span class="num">3</span> Conceptos fundamentales</h2>
+  <div class="grid g2">
+    <div class="card"><h4><span class="ico">E</span>Entidad</h4><p>Clase de VB.NET que representa una tabla. Cada <strong>instancia</strong> representa una <strong>fila</strong>. Ejemplo: la clase <code>Producto</code>.</p></div>
+    <div class="card"><h4><span class="ico">C</span>DbContext</h4><p>Clase central del ORM. Representa una <strong>sesión de trabajo</strong> con la base de datos: abre la conexión, consulta, rastrea cambios y guarda.</p></div>
+    <div class="card"><h4><span class="ico">S</span>DbSet(Of T)</h4><p>Propiedad del contexto que representa una <strong>tabla completa</strong>. Sobre ella se consulta, agrega o elimina: <code>ctx.Productos</code>.</p></div>
+    <div class="card"><h4><span class="ico">M</span>Mapeo</h4><p>Reglas que dicen qué clase va a qué tabla y qué propiedad va a qué columna. Se definen con <strong>atributos</strong> (<code>&lt;Table&gt;</code>, <code>&lt;Column&gt;</code>) o con la <strong>Fluent API</strong>.</p></div>
+    <div class="card"><h4><span class="ico">Q</span>LINQ</h4><p>Sintaxis de consultas integrada en VB.NET. EF Core la traduce a SQL: <code>Where(Function(p) p.Precio &gt; 100)</code> se convierte en <code>WHERE precio &gt; 100</code>.</p></div>
+    <div class="card"><h4><span class="ico">T</span>Change Tracker</h4><p>“Rastreador de cambios”. Anota el <strong>estado</strong> de cada entidad (nueva, modificada, eliminada…) para saber qué SQL generar.</p></div>
+    <div class="card"><h4><span class="ico">↺</span>SaveChanges</h4><p>Método que confirma el trabajo: revisa el rastreador y envía los <code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code> dentro de una transacción.</p></div>
+    <div class="card"><h4><span class="ico">P</span>Proveedor</h4><p>Paquete que adapta EF Core a un motor específico. Para MariaDB usamos <strong>Pomelo.EntityFrameworkCore.MySql</strong>.</p></div>
+    <div class="card"><h4><span class="ico">N</span>Propiedad de navegación</h4><p>Propiedad que apunta a otra entidad, como <code>Producto.Categoria</code>. Representa en objetos lo que en tablas es una <strong>clave foránea</strong>.</p></div>
+  </div>
+
+  <h3>Las cuatro equivalencias del mapeo</h3>
+  <figure>
+    <svg viewBox="0 0 900 230" role="img" aria-label="Equivalencias del mapeo objeto-relacional">
+      <g>
+        <rect x="40" y="20" width="330" height="40" rx="10" class="s-box-p"/><text x="205" y="46" text-anchor="middle" class="s-t"><tspan font-weight="700">Clase</tspan> Producto</text>
+        <rect x="530" y="20" width="330" height="40" rx="10" class="s-box"/><text x="695" y="46" text-anchor="middle" class="s-t"><tspan font-weight="700">Tabla</tspan> productos</text>
+        <rect x="40" y="72" width="330" height="40" rx="10" class="s-box-p"/><text x="205" y="98" text-anchor="middle" class="s-t"><tspan font-weight="700">Propiedad</tspan> Precio</text>
+        <rect x="530" y="72" width="330" height="40" rx="10" class="s-box"/><text x="695" y="98" text-anchor="middle" class="s-t"><tspan font-weight="700">Columna</tspan> precio</text>
+        <rect x="40" y="124" width="330" height="40" rx="10" class="s-box-p"/><text x="205" y="150" text-anchor="middle" class="s-t"><tspan font-weight="700">Objeto</tspan> New Producto(…)</text>
+        <rect x="530" y="124" width="330" height="40" rx="10" class="s-box"/><text x="695" y="150" text-anchor="middle" class="s-t"><tspan font-weight="700">Fila</tspan> (7, 'Cuaderno', 85.00…)</text>
+        <rect x="40" y="176" width="330" height="40" rx="10" class="s-box-p"/><text x="205" y="202" text-anchor="middle" class="s-t"><tspan font-weight="700">Referencia</tspan> p.Categoria</text>
+        <rect x="530" y="176" width="330" height="40" rx="10" class="s-box"/><text x="695" y="202" text-anchor="middle" class="s-t"><tspan font-weight="700">Clave foránea</tspan> id_categoria</text>
+      </g>
+      <g class="s-line">
+        <path d="M378 40 H522"/><path d="M378 92 H522"/><path d="M378 144 H522"/><path d="M378 196 H522"/>
+      </g>
+      <g class="s-tm" text-anchor="middle"><text x="450" y="34">mapea a</text><text x="450" y="86">mapea a</text><text x="450" y="138">mapea a</text><text x="450" y="190">mapea a</text></g>
+    </svg>
+    <figcaption>Figura 3. Correspondencias básicas entre el modelo de objetos y el modelo relacional.</figcaption>
+  </figure>
+
+  <div class="lab">
+    <div class="lab-title">Explorador de mapeo: haga clic en una propiedad o en una columna</div>
+    <div class="map-grid">
+      <div class="map-col"><div class="hd">Class Producto</div><div id="mapLeft"></div></div>
+      <div class="map-mid">⇄</div>
+      <div class="map-col"><div class="hd">TABLE productos</div><div id="mapRight"></div></div>
+    </div>
+    <div class="map-explain" id="mapExplain">Seleccione un elemento para ver cómo se mapea y qué atributo lo define.</div>
+  </div>
+
+  <h3>Enfoques de trabajo</h3>
+  <div class="grid g2">
+    <div class="card"><h4><span class="ico">DB</span>Database First</h4><p>La base de datos ya existe y escribimos (o generamos) las clases que la representan. <strong>Es el enfoque que usaremos</strong>, porque ya sabemos crear tablas en MariaDB.</p></div>
+    <div class="card"><h4><span class="ico">{}</span>Code First</h4><p>Se escriben primero las clases y EF Core crea las tablas mediante <em>migraciones</em>. Las herramientas de migración de EF Core generan código C#, por lo que en VB.NET resulta poco práctico.</p></div>
+  </div>
+</section>
+
+<!-- ============ 4. ARQUITECTURA ============ -->
+<section class="block" id="arquitectura">
+  <h2><span class="num">4</span> Arquitectura de EF Core en nuestra aplicación</h2>
+  <p>Cuando el usuario presiona <strong>Guardar</strong> en el formulario, la petición atraviesa varias capas antes de llegar a MariaDB. Cada capa tiene una responsabilidad única:</p>
+  <figure>
+    <svg viewBox="0 0 900 470" role="img" aria-label="Capas de la arquitectura con EF Core">
+      <defs><marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="s-arrow"/></marker></defs>
+      <g>
+        <rect x="200" y="10" width="420" height="56" rx="12" class="s-box"/>
+        <text x="410" y="35" text-anchor="middle" class="s-tt">FrmProductos (Windows Forms)</text>
+        <text x="410" y="55" text-anchor="middle" class="s-tm">Eventos Click, controles, validación</text>
+
+        <rect x="200" y="90" width="420" height="56" rx="12" class="s-box-p"/>
+        <text x="410" y="115" text-anchor="middle" class="s-tt">AppDbContext + entidades</text>
+        <text x="410" y="135" text-anchor="middle" class="s-tm">Nuestro código: DbSet(Of Producto), DbSet(Of Categoria)</text>
+
+        <rect x="200" y="170" width="420" height="72" rx="12" class="s-box-d"/>
+        <text x="410" y="198" text-anchor="middle" class="s-th">Entity Framework Core</text>
+        <text x="410" y="222" text-anchor="middle" class="s-th" style="font-size:12.5px;font-weight:500">Traductor LINQ → SQL · Change Tracker · Materialización</text>
+
+        <rect x="200" y="266" width="420" height="56" rx="12" class="s-box-p"/>
+        <text x="410" y="291" text-anchor="middle" class="s-tt">Pomelo.EntityFrameworkCore.MySql</text>
+        <text x="410" y="311" text-anchor="middle" class="s-tm">Proveedor: dialecto SQL de MySQL/MariaDB</text>
+
+        <rect x="200" y="346" width="420" height="56" rx="12" class="s-box"/>
+        <text x="410" y="371" text-anchor="middle" class="s-tt">MySqlConnector</text>
+        <text x="410" y="391" text-anchor="middle" class="s-tm">Driver ADO.NET (el mismo de sesiones anteriores)</text>
+      </g>
+      <g transform="translate(355,412)">
+        <ellipse cx="55" cy="10" rx="55" ry="12" class="s-box-d"/>
+        <rect x="0" y="10" width="110" height="34" class="s-box-d"/>
+        <ellipse cx="55" cy="44" rx="55" ry="12" class="s-box-d"/>
+        <text x="55" y="38" text-anchor="middle" class="s-th">MariaDB</text>
+      </g>
+      <g class="s-line" marker-end="url(#ar3)">
+        <path d="M410 66 V86"/><path d="M410 146 V166"/><path d="M410 242 V262"/><path d="M410 322 V342"/><path d="M410 402 V418"/>
+      </g>
+      <g>
+        <rect x="650" y="90" width="230" height="230" rx="12" class="s-box"/>
+        <text x="765" y="118" text-anchor="middle" class="s-tt">Lo que escribimos</text>
+        <text x="668" y="150" class="s-tm">✔ Clases de entidad</text>
+        <text x="668" y="174" class="s-tm">✔ AppDbContext</text>
+        <text x="668" y="198" class="s-tm">✔ Consultas LINQ</text>
+        <text x="668" y="222" class="s-tm">✔ Lógica del formulario</text>
+        <text x="765" y="256" text-anchor="middle" class="s-tt">Lo que hace EF</text>
+        <text x="668" y="284" class="s-tm">⚙ SQL, parámetros, conexión,</text>
+        <text x="668" y="304" class="s-tm">⚙ conversión de tipos</text>
+      </g>
+      <g>
+        <rect x="20" y="170" width="160" height="72" rx="12" class="s-box"/>
+        <text x="100" y="200" text-anchor="middle" class="s-t" font-weight="700">Paquete NuGet</text>
+        <text x="100" y="222" text-anchor="middle" class="s-tm">se instala uno solo:</text>
+        <text x="100" y="238" text-anchor="middle" class="s-tm">Pomelo (trae el resto)</text>
+      </g>
+    </svg>
+    <figcaption>Figura 4. Al instalar Pomelo, NuGet descarga automáticamente EF Core y MySqlConnector.</figcaption>
+  </figure>
+  <div class="callout ok"><span class="badge">🔗</span><div><span class="t">Conexión con lo ya aprendido.</span> Por debajo de EF Core sigue trabajando <code>MySqlConnector</code>, el mismo driver que usamos con <code>MySqlDataAdapter</code>. EF Core no reemplaza ADO.NET: se construye <em>sobre</em> él.</div></div>
+</section>
+
+<!-- ============ 5. ADO vs ORM ============ -->
+<section class="block" id="ado-vs-orm">
+  <h2><span class="num">5</span> ADO.NET vs. ORM: la misma operación, dos estilos</h2>
+  <p>Insertemos un producto nuevo. A la izquierda, el estilo de las sesiones anteriores; a la derecha, con EF Core.</p>
+  <div class="split">
+<script type="text/x-code" data-lang="vb" data-title="Con ADO.NET (MySqlConnector)">
+Using cn As New MySqlConnection(CadenaConexion)
+    cn.Open()
+    Dim sql = "INSERT INTO productos " &
+              "(nombre, precio, existencia, id_categoria) " &
+              "VALUES (@nom, @pre, @exi, @cat)"
+    Using cmd As New MySqlCommand(sql, cn)
+        cmd.Parameters.AddWithValue("@nom", txtNombre.Text)
+        cmd.Parameters.AddWithValue("@pre", nudPrecio.Value)
+        cmd.Parameters.AddWithValue("@exi", nudExistencia.Value)
+        cmd.Parameters.AddWithValue("@cat", cboCategoria.SelectedValue)
+        cmd.ExecuteNonQuery()
+    End Using
+End Using
+</script>
+<script type="text/x-code" data-lang="vb" data-title="Con EF Core (ORM)">
+Using ctx As New AppDbContext()
+    Dim p As New Producto With {
+        .Nombre = txtNombre.Text,
+        .Precio = nudPrecio.Value,
+        .Existencia = CInt(nudExistencia.Value),
+        .CategoriaId = CInt(cboCategoria.SelectedValue)
+    }
+    ctx.Productos.Add(p)      ' se marca como "Added"
+    ctx.SaveChanges()         ' EF genera el INSERT
+End Using
+' p.Id ya contiene el valor AUTO_INCREMENT
+</script>
+  </div>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Aspecto</th><th>ADO.NET directo</th><th>ORM (EF Core)</th></tr>
+    <tr><td>SQL</td><td>Escrito a mano en cadenas</td><td>Generado a partir de LINQ</td></tr>
+    <tr><td>Errores de escritura</td><td>Se descubren al ejecutar</td><td>El compilador detecta nombres de propiedades incorrectos</td></tr>
+    <tr><td>Resultado de una consulta</td><td><code>DataTable</code> / <code>DataRow</code> (acceso por nombre de columna)</td><td>Lista de objetos tipados (<code>List(Of Producto)</code>)</td></tr>
+    <tr><td>Control y rendimiento</td><td>Control total del SQL</td><td>Algo de sobrecarga; SQL menos ajustable</td></tr>
+    <tr><td>Cambiar de motor de BD</td><td>Reescribir consultas</td><td>Cambiar el proveedor</td></tr>
+  </table></div>
+  <div class="callout warn"><span class="badge">⚖️</span><div><span class="t">No es “mejor” en todo.</span> Para reportes complejos o procesos masivos, SQL escrito a mano puede ser más eficiente. En aplicaciones de gestión (mantenimientos CRUD), el ORM ahorra mucho código repetitivo.</div></div>
+</section>
+
+<!-- ============ 6. ESTADOS ============ -->
+<section class="block" id="estados">
+  <h2><span class="num">6</span> Ciclo de vida de una entidad</h2>
+  <p>El <strong>Change Tracker</strong> asigna a cada entidad uno de cinco estados. El estado determina qué SQL generará <code>SaveChanges()</code>. Comprender este diagrama es comprender cómo funciona EF Core.</p>
+  <figure>
+    <svg viewBox="0 0 900 360" role="img" aria-label="Diagrama de estados de una entidad en EF Core">
+      <defs><marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="s-arrow"/></marker></defs>
+      <g>
+        <rect x="20" y="150" width="150" height="56" rx="28" fill="#6b7a96"/><text x="95" y="183" text-anchor="middle" class="s-th">Detached</text>
+        <rect x="290" y="30" width="150" height="56" rx="28" fill="#0f7a4f"/><text x="365" y="63" text-anchor="middle" class="s-th">Added</text>
+        <rect x="370" y="150" width="160" height="56" rx="28" fill="#1546a0"/><text x="450" y="183" text-anchor="middle" class="s-th">Unchanged</text>
+        <rect x="720" y="80" width="160" height="56" rx="28" fill="#b56a00"/><text x="800" y="113" text-anchor="middle" class="s-th">Modified</text>
+        <rect x="720" y="260" width="160" height="56" rx="28" fill="#b4232c"/><text x="800" y="293" text-anchor="middle" class="s-th">Deleted</text>
+      </g>
+      <g class="s-line" marker-end="url(#ar4)">
+        <path d="M120 150 Q170 60 284 58"/>
+        <path d="M170 178 H364"/>
+        <path d="M440 70 Q480 100 462 144"/>
+        <path d="M530 165 Q620 110 714 108"/>
+        <path d="M714 122 Q640 160 536 180"/>
+        <path d="M530 196 Q620 270 714 286"/>
+        <path d="M800 140 V254"/>
+        <path d="M720 300 Q300 340 110 212"/>
+      </g>
+      <g class="s-tm">
+        <text x="120" y="86">Add()</text>
+        <text x="190" y="170">consulta / Attach()</text>
+        <text x="472" y="106">SaveChanges()</text>
+        <text x="472" y="122" class="s-code" style="font-size:11px">INSERT</text>
+        <text x="560" y="112">cambiar propiedad</text>
+        <text x="560" y="168">SaveChanges() · UPDATE</text>
+        <text x="600" y="262">Remove()</text>
+        <text x="810" y="200">Remove()</text>
+        <text x="340" y="322">SaveChanges() · DELETE</text>
+      </g>
+    </svg>
+    <figcaption>Figura 5. Transiciones de estado. <code>Detached</code> significa “el contexto no conoce este objeto”.</figcaption>
+  </figure>
+
+  <div class="lab">
+    <div class="lab-title">Simulador del Change Tracker</div>
+    <p class="small" style="margin-top:0">Pulse las operaciones en el orden que quiera y observe el estado de la entidad y el SQL que EF Core enviaría a MariaDB.</p>
+    <div class="entity-card" id="entCard">Producto { Id = 0, Nombre = "Lapicero azul", Precio = 12.00 }</div>
+    <div class="states" id="stateBar">
+      <span class="state" data-s="Detached">Detached</span><span class="state" data-s="Added">Added</span><span class="state" data-s="Unchanged">Unchanged</span><span class="state" data-s="Modified">Modified</span><span class="state" data-s="Deleted">Deleted</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" data-op="add">ctx.Productos.Add(p)</button>
+      <button class="btn" data-op="find">ctx.Productos.Find(15)</button>
+      <button class="btn" data-op="mod">p.Precio = 15.00</button>
+      <button class="btn" data-op="rem">ctx.Productos.Remove(p)</button>
+      <button class="btn primary" data-op="save">ctx.SaveChanges()</button>
+      <button class="btn" data-op="reset">Reiniciar</button>
+    </div>
+    <div class="console" id="trkConsole"></div>
+  </div>
+</section>
+
+<!-- ============ 7. CRUD LINQ SQL ============ -->
+<section class="block" id="crud-linq">
+  <h2><span class="num">7</span> Las operaciones CRUD: de LINQ a SQL</h2>
+  <p>CRUD son las cuatro operaciones básicas sobre datos: <strong>C</strong>reate (crear), <strong>R</strong>ead (leer), <strong>U</strong>pdate (actualizar) y <strong>D</strong>elete (eliminar). Observe en cada pestaña lo que escribimos en VB.NET y el SQL que EF Core genera.</p>
+  <div class="lab">
+    <div class="tabs" id="crudTabs">
+      <button class="tab on" data-t="c">Create</button>
+      <button class="tab" data-t="r">Read</button>
+      <button class="tab" data-t="r2">Read con filtro</button>
+      <button class="tab" data-t="u">Update</button>
+      <button class="tab" data-t="d">Delete</button>
+    </div>
+    <div class="tab-panel on" data-p="c"><div class="split">
+<script type="text/x-code" data-lang="vb" data-title="VB.NET">
+Dim p As New Producto With {
+    .Nombre = "Cuaderno universitario",
+    .Precio = 85D, .Existencia = 40,
+    .CategoriaId = 1}
+ctx.Productos.Add(p)
+Await ctx.SaveChangesAsync()
+</script>
+<script type="text/x-code" data-lang="sql" data-title="SQL generado">
+INSERT INTO `productos`
+  (`id_categoria`, `existencia`, `nombre`,
+   `precio`, `version_fila`)
+VALUES (@p0, @p1, @p2, @p3, @p4);
+SELECT `id_producto`
+FROM `productos`
+WHERE ROW_COUNT() = 1
+  AND `id_producto` = LAST_INSERT_ID();
+</script>
+    </div><p class="small">Después del <code>INSERT</code>, EF recupera el <code>AUTO_INCREMENT</code> y lo asigna a <code>p.Id</code>.</p></div>
+
+    <div class="tab-panel" data-p="r"><div class="split">
+<script type="text/x-code" data-lang="vb" data-title="VB.NET">
+Dim lista = Await ctx.Productos.
+    AsNoTracking().
+    OrderBy(Function(p) p.Nombre).
+    ToListAsync()
+</script>
+<script type="text/x-code" data-lang="sql" data-title="SQL generado">
+SELECT `p`.`id_producto`, `p`.`id_categoria`,
+       `p`.`existencia`, `p`.`nombre`,
+       `p`.`precio`, `p`.`version_fila`
+FROM `productos` AS `p`
+ORDER BY `p`.`nombre`;
+</script>
+    </div><p class="small"><code>AsNoTracking()</code> indica que solo vamos a mostrar los datos: el contexto no los rastrea y la consulta es más liviana.</p></div>
+
+    <div class="tab-panel" data-p="r2"><div class="split">
+<script type="text/x-code" data-lang="vb" data-title="VB.NET">
+Dim baratos = Await ctx.Productos.
+    Where(Function(p) p.Precio < 100D AndAlso
+                      p.Nombre.Contains("cuaderno")).
+    Select(Function(p) New With {
+        p.Nombre, p.Precio,
+        .Categoria = p.Categoria.Nombre}).
+    ToListAsync()
+</script>
+<script type="text/x-code" data-lang="sql" data-title="SQL generado">
+SELECT `p`.`nombre`, `p`.`precio`,
+       `c`.`nombre` AS `Categoria`
+FROM `productos` AS `p`
+INNER JOIN `categorias` AS `c`
+   ON `p`.`id_categoria` = `c`.`id_categoria`
+WHERE `p`.`precio` < 100.0
+  AND `p`.`nombre` LIKE '%cuaderno%';
+</script>
+    </div><p class="small">Al usar la navegación <code>p.Categoria.Nombre</code>, EF Core genera el <code>JOIN</code> automáticamente.</p></div>
+
+    <div class="tab-panel" data-p="u"><div class="split">
+<script type="text/x-code" data-lang="vb" data-title="VB.NET">
+Dim p = Await ctx.Productos.FindAsync(7)
+p.Precio = 92D          ' Unchanged → Modified
+Await ctx.SaveChangesAsync()
+</script>
+<script type="text/x-code" data-lang="sql" data-title="SQL generado">
+-- 1) FindAsync
+SELECT ... FROM `productos` AS `p`
+WHERE `p`.`id_producto` = @id LIMIT 1;
+
+-- 2) SaveChangesAsync: solo la columna cambiada
+UPDATE `productos` SET `precio` = @p0
+WHERE `id_producto` = @p1;
+</script>
+    </div><p class="small">El rastreador compara los valores originales con los actuales y actualiza <strong>solo</strong> lo que cambió.</p></div>
+
+    <div class="tab-panel" data-p="d"><div class="split">
+<script type="text/x-code" data-lang="vb" data-title="VB.NET">
+Dim p = Await ctx.Productos.FindAsync(7)
+If p IsNot Nothing Then
+    ctx.Productos.Remove(p)   ' → Deleted
+    Await ctx.SaveChangesAsync()
+End If
+</script>
+<script type="text/x-code" data-lang="sql" data-title="SQL generado">
+DELETE FROM `productos`
+WHERE `id_producto` = @p0;
+</script>
+    </div><p class="small">Si la tabla tuviera filas hijas con clave foránea, MariaDB rechazaría el <code>DELETE</code> y EF Core lanzaría una <code>DbUpdateException</code>.</p></div>
+  </div>
+
+  <h3>Métodos LINQ más usados</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Método</th><th>Equivalente SQL</th><th>Ejemplo VB.NET</th></tr>
+    <tr><td><code>Where</code></td><td><code>WHERE</code></td><td><code>.Where(Function(p) p.Existencia &lt; 5)</code></td></tr>
+    <tr><td><code>OrderBy</code> / <code>OrderByDescending</code></td><td><code>ORDER BY</code></td><td><code>.OrderByDescending(Function(p) p.Precio)</code></td></tr>
+    <tr><td><code>Select</code></td><td>lista de columnas</td><td><code>.Select(Function(p) p.Nombre)</code></td></tr>
+    <tr><td><code>Include</code></td><td><code>JOIN</code> (carga la entidad relacionada)</td><td><code>.Include(Function(p) p.Categoria)</code></td></tr>
+    <tr><td><code>CountAsync</code> / <code>SumAsync</code></td><td><code>COUNT</code> / <code>SUM</code></td><td><code>.SumAsync(Function(p) p.Precio * p.Existencia)</code></td></tr>
+    <tr><td><code>AnyAsync</code></td><td><code>EXISTS</code></td><td><code>.AnyAsync(Function(p) p.CategoriaId = 3)</code></td></tr>
+    <tr><td><code>FirstOrDefaultAsync</code></td><td><code>LIMIT 1</code></td><td><code>.FirstOrDefaultAsync(Function(p) p.Nombre = "Lápiz")</code></td></tr>
+  </table></div>
+</section>
+
+<!-- ============ 8. ASYNC Y CONCURRENCIA ============ -->
+<section class="block" id="async">
+  <h2><span class="num">8</span> Asincronía y concurrencia con el ORM</h2>
+  <p>Una consulta a la base de datos puede tardar: la red, el servidor o el volumen de datos influyen. En Windows Forms, todo el código de los eventos corre en el <strong>hilo de la interfaz (hilo UI)</strong>. Si ese hilo espera a MariaDB, el formulario se congela y Windows muestra “(No responde)”.</p>
+
+  <figure>
+    <svg viewBox="0 0 900 250" role="img" aria-label="Línea de tiempo síncrona frente a asíncrona">
+      <text x="20" y="30" class="s-tt">Síncrono: SaveChanges()</text>
+      <rect x="20" y="42" width="140" height="34" rx="6" fill="#1546a0"/><text x="90" y="64" text-anchor="middle" class="s-th" style="font-size:12px">Click</text>
+      <rect x="160" y="42" width="420" height="34" rx="6" fill="#b4232c"/><text x="370" y="64" text-anchor="middle" class="s-th" style="font-size:12px">Hilo UI BLOQUEADO esperando a MariaDB</text>
+      <rect x="580" y="42" width="140" height="34" rx="6" fill="#1546a0"/><text x="650" y="64" text-anchor="middle" class="s-th" style="font-size:12px">Mostrar resultado</text>
+      <text x="740" y="64" class="s-tm">formulario congelado</text>
+
+      <text x="20" y="130" class="s-tt">Asíncrono: Await SaveChangesAsync()</text>
+      <rect x="20" y="142" width="140" height="34" rx="6" fill="#1546a0"/><text x="90" y="164" text-anchor="middle" class="s-th" style="font-size:12px">Click</text>
+      <rect x="160" y="142" width="420" height="34" rx="6" fill="#0f7a4f"/><text x="370" y="164" text-anchor="middle" class="s-th" style="font-size:12px">Hilo UI LIBRE: repinta, mueve, responde</text>
+      <rect x="580" y="142" width="140" height="34" rx="6" fill="#1546a0"/><text x="650" y="164" text-anchor="middle" class="s-th" style="font-size:12px">Continúa tras Await</text>
+      <rect x="160" y="190" width="420" height="30" rx="6" class="s-box-p"/><text x="370" y="210" text-anchor="middle" class="s-t" style="font-size:12.5px">La operación de E/S con MariaDB ocurre en segundo plano</text>
+      <text x="740" y="164" class="s-tm">formulario fluido</text>
+    </svg>
+    <figcaption>Figura 6. <code>Await</code> libera el hilo UI mientras la base de datos trabaja y retoma el método cuando hay respuesta.</figcaption>
+  </figure>
+
+  <div class="lab">
+    <div class="lab-title">Demostración: consulta de 3 segundos</div>
+    <div class="split">
+      <div>
+        <div class="fake-form" id="syncForm">
+          <div class="titlebar"><span id="syncTitle">FrmProductos</span><span>— ▢ ✕</span></div>
+          <div class="body"><div style="display:flex;gap:.6rem;align-items:center"><div class="spinner"></div><span class="small">Animación de la UI</span></div>
+          <input class="fake-input" id="syncInput" placeholder="Intente escribir aquí…"></div>
+        </div>
+        <div class="btn-row"><button class="btn" id="syncBtn">Ejecutar SaveChanges()</button></div>
+      </div>
+      <div>
+        <div class="fake-form" id="asyncForm">
+          <div class="titlebar"><span id="asyncTitle">FrmProductos</span><span>— ▢ ✕</span></div>
+          <div class="body"><div style="display:flex;gap:.6rem;align-items:center"><div class="spinner"></div><span class="small">Animación de la UI</span></div>
+          <input class="fake-input" placeholder="Intente escribir aquí…"></div>
+        </div>
+        <div class="btn-row"><button class="btn primary" id="asyncBtn">Ejecutar Await SaveChangesAsync()</button></div>
+      </div>
+    </div>
+  </div>
+
+<script type="text/x-code" data-lang="vb" data-title="Patrón asíncrono en un evento de Windows Forms">
+' 1) El manejador se marca con Async
+Private Async Sub btnGuardar_Click(sender As Object, e As EventArgs) Handles btnGuardar.Click
+    btnGuardar.Enabled = False                 ' evita doble clic mientras espera
+    Using ctx As New AppDbContext()
+        ctx.Productos.Add(nuevo)
+        Await ctx.SaveChangesAsync()           ' 2) Await libera el hilo UI
+    End Using                                  ' 3) al volver, seguimos en el hilo UI
+    btnGuardar.Enabled = True
+End Sub
+</script>
+  <div class="callout warn"><span class="badge">⚠️</span><div><span class="t">Regla de oro.</span> Un <code>DbContext</code> <strong>no</strong> admite dos operaciones al mismo tiempo. Si el usuario hace doble clic y se lanzan dos <code>SaveChangesAsync</code> sobre el mismo contexto, EF Core lanza <em>“A second operation was started on this context instance…”</em>. Por eso deshabilitamos botones mientras se espera y creamos <strong>un contexto nuevo por operación</strong>.</div></div>
+
+  <h3>Concurrencia entre usuarios: control optimista</h3>
+  <p>En una tienda real, dos cajeros pueden abrir el mismo producto a la vez. Si ambos lo modifican, el último en guardar sobrescribe al primero sin darse cuenta (<strong>pérdida de actualización</strong>). EF Core lo evita con un <strong>token de concurrencia</strong>: una columna (<code>version_fila</code>) que se incluye en el <code>WHERE</code> del <code>UPDATE</code>.</p>
+  <figure>
+    <svg viewBox="0 0 900 270" role="img" aria-label="Secuencia de concurrencia optimista">
+      <defs><marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="s-arrow"/></marker></defs>
+      <text x="120" y="24" text-anchor="middle" class="s-tt">Cajero A</text>
+      <text x="450" y="24" text-anchor="middle" class="s-tt">MariaDB</text>
+      <text x="780" y="24" text-anchor="middle" class="s-tt">Cajero B</text>
+      <path d="M120 34 V260" class="s-line-m"/><path d="M450 34 V260" class="s-line-m"/><path d="M780 34 V260" class="s-line-m"/>
+      <g class="s-line" marker-end="url(#ar5)">
+        <path d="M444 60 H126"/><path d="M456 90 H774"/><path d="M126 140 H444"/><path d="M774 200 H456"/>
+      </g>
+      <text x="285" y="52" text-anchor="middle" class="s-tm">lee precio 85 · versión 1</text>
+      <text x="615" y="82" text-anchor="middle" class="s-tm">lee precio 85 · versión 1</text>
+      <text x="285" y="132" text-anchor="middle" class="s-code">UPDATE … WHERE version_fila = 1</text>
+      <rect x="380" y="150" width="140" height="28" rx="6" fill="#0f7a4f"/><text x="450" y="169" text-anchor="middle" class="s-th" style="font-size:12px">1 fila · versión → 2</text>
+      <text x="615" y="192" text-anchor="middle" class="s-code">UPDATE … WHERE version_fila = 1</text>
+      <rect x="370" y="212" width="160" height="28" rx="6" fill="#b4232c"/><text x="450" y="231" text-anchor="middle" class="s-th" style="font-size:12px">0 filas → excepción</text>
+      <text x="780" y="255" text-anchor="middle" class="s-tm">DbUpdateConcurrencyException</text>
+    </svg>
+    <figcaption>Figura 7. Como B leyó la versión 1 y la fila ya está en versión 2, su <code>UPDATE</code> no afecta ninguna fila y EF Core lo detecta.</figcaption>
+  </figure>
+
+  <div class="lab">
+    <div class="lab-title">Simulador: dos cajeros editan el mismo producto</div>
+    <div class="conc">
+      <div class="user">
+        <h5>Cajero A</h5>
+        <button class="btn" data-u="A" data-a="leer">Leer producto</button>
+        <span class="small" id="infoA">Sin datos leídos</span>
+        <input class="fake-input" type="number" id="precioA" value="85" step="0.5" disabled>
+        <div class="btn-row"><button class="btn primary" data-u="A" data-a="guardar" disabled>Guardar</button></div>
+      </div>
+      <div class="db-box" id="dbBox"></div>
+      <div class="user">
+        <h5>Cajero B</h5>
+        <button class="btn" data-u="B" data-a="leer">Leer producto</button>
+        <span class="small" id="infoB">Sin datos leídos</span>
+        <input class="fake-input" type="number" id="precioB" value="85" step="0.5" disabled>
+        <div class="btn-row"><button class="btn primary" data-u="B" data-a="guardar" disabled>Guardar</button></div>
+      </div>
+    </div>
+    <div class="console" id="concConsole" style="margin-top:.8rem"></div>
+    <div class="btn-row"><button class="btn" id="concReset">Reiniciar simulación</button></div>
+  </div>
+</section>
+
+<!-- ============ 9. PRÁCTICA ============ -->
+<section class="block" id="practica">
+  <h2><span class="num">9</span> Práctica guiada: mantenimiento de productos con EF Core</h2>
+  <p class="lead">Construiremos <strong>InventarioORM</strong>, el mantenimiento de productos de la <strong>Librería y Papelería Segovia</strong> (Estelí). El formulario listará, buscará, creará, actualizará y eliminará productos, con precios en córdobas y control de concurrencia.</p>
+
+  <figure>
+    <svg viewBox="0 0 900 220" role="img" aria-label="Estructura del proyecto InventarioORM">
+      <rect x="30" y="20" width="250" height="180" rx="12" class="s-box"/>
+      <text x="155" y="48" text-anchor="middle" class="s-tt">InventarioORM</text>
+      <g class="s-code">
+        <text x="55" y="80">📄 ConexionBD.vb</text>
+        <text x="55" y="104">📄 Categoria.vb</text>
+        <text x="55" y="128">📄 Producto.vb</text>
+        <text x="55" y="152">📄 ProductoVista.vb</text>
+        <text x="55" y="176">📄 AppDbContext.vb</text>
+        <text x="55" y="196">🖼 FrmProductos.vb</text>
+      </g>
+      <g class="s-tm">
+        <text x="310" y="80">← cadena de conexión centralizada (mismo patrón del curso)</text>
+        <text x="310" y="104">← entidad: tabla categorias</text>
+        <text x="310" y="128">← entidad: tabla productos (con token de concurrencia)</text>
+        <text x="310" y="152">← clase sencilla para mostrar datos en el DataGridView</text>
+        <text x="310" y="176">← sesión con la base de datos y DbSets</text>
+        <text x="310" y="200">← interfaz y operaciones CRUD asíncronas</text>
+      </g>
+    </svg>
+    <figcaption>Figura 8. Archivos que crearemos durante la práctica.</figcaption>
+  </figure>
+
+  <!-- 9.1 -->
+  <h3 id="p-bd">9.1 Crear la base de datos en MariaDB</h3>
+  <div class="step"><div class="n">1</div><div>
+    <h4>Ejecute el script en HeidiSQL (o el cliente que use)</h4>
+    <p>El script crea dos tablas relacionadas y carga datos de ejemplo. Observe la columna <code>version_fila</code>: será nuestro token de concurrencia.</p>
+<script type="text/x-code" data-lang="sql" data-title="libreria_segovia.sql">
+CREATE DATABASE IF NOT EXISTS libreria_segovia
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE libreria_segovia;
+
+CREATE TABLE categorias (
+    id_categoria INT AUTO_INCREMENT PRIMARY KEY,
+    nombre       VARCHAR(60) NOT NULL UNIQUE
+);
+
+CREATE TABLE productos (
+    id_producto  INT AUTO_INCREMENT PRIMARY KEY,
+    nombre       VARCHAR(100)  NOT NULL,
+    precio       DECIMAL(10,2) NOT NULL DEFAULT 0,
+    existencia   INT           NOT NULL DEFAULT 0,
+    id_categoria INT           NOT NULL,
+    version_fila INT           NOT NULL DEFAULT 1,   -- token de concurrencia
+    CONSTRAINT fk_producto_categoria FOREIGN KEY (id_categoria)
+        REFERENCES categorias (id_categoria)
+);
+
+INSERT INTO categorias (nombre) VALUES
+  ('Papelería'), ('Útiles escolares'), ('Arte y manualidades'), ('Tecnología');
+
+INSERT INTO productos (nombre, precio, existencia, id_categoria) VALUES
+  ('Cuaderno universitario 100 hojas', 85.00, 40, 1),
+  ('Resma de papel carta',            260.00, 25, 1),
+  ('Lapicero azul (unidad)',           12.00, 300, 2),
+  ('Mochila escolar',                 650.00, 12, 2),
+  ('Caja de témperas 12 colores',     145.00, 18, 3),
+  ('Memoria USB 32 GB',               320.00, 10, 4);
+</script>
+    <div class="callout ok"><span class="badge">✅</span><div><span class="t">Punto de control.</span> Ejecute <code>SELECT * FROM productos;</code> y verifique que aparecen 6 filas con <code>version_fila = 1</code>.</div></div>
+  </div></div>
+
+  <!-- 9.2 -->
+  <h3 id="p-proyecto">9.2 Crear el proyecto e instalar EF Core</h3>
+  <div class="step"><div class="n">2</div><div>
+    <h4>Nuevo proyecto</h4>
+    <p>En Visual Studio 2026: <span class="path">Crear un proyecto → Aplicación de Windows Forms</span> (filtre por <strong>Visual Basic</strong>). Nombre: <code>InventarioORM</code>. Framework: <strong>.NET 10.0</strong>.</p>
+  </div></div>
+  <div class="step"><div class="n">3</div><div>
+    <h4>Instalar el proveedor de MariaDB</h4>
+    <p>Clic derecho sobre el proyecto → <span class="path">Administrar paquetes NuGet → Examinar</span>. Busque <code>Pomelo.EntityFrameworkCore.MySql</code> e instale la versión <strong>9.0.0</strong>. También puede usar la <span class="path">Consola del Administrador de paquetes</span>:</p>
+<script type="text/x-code" data-lang="ps" data-title="Consola del Administrador de paquetes">
+Install-Package Pomelo.EntityFrameworkCore.MySql -Version 9.0.0
+</script>
+    <p>Este único paquete instala como dependencias <strong>Microsoft.EntityFrameworkCore</strong> (versión 9.x) y <strong>MySqlConnector 2.4.0</strong>. EF Core 9 funciona sin problemas en un proyecto .NET 10.</p>
+    <div class="callout warn"><span class="badge">⚠️</span><div><span class="t">No mezcle versiones.</span> No instale ni actualice por separado <code>Microsoft.EntityFrameworkCore</code> a la serie 10.x: el proveedor Pomelo 9.0.0 está compilado para EF Core 9 y la mezcla produce errores en tiempo de ejecución.</div></div>
+  </div></div>
+  <div class="step"><div class="n">4</div><div>
+    <h4>Verificar el archivo del proyecto</h4>
+    <p>Doble clic sobre el nombre del proyecto en el Explorador de soluciones. Agregue las líneas <code>MyType</code> y <code>StartupObject</code> (punto de entrada en <code>Program.vb</code>, como en sesiones anteriores). Debe quedar así:</p>
+<script type="text/x-code" data-lang="xml" data-title="InventarioORM.vbproj">
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>InventarioORM</RootNamespace>
+    <AssemblyName>InventarioORM</AssemblyName>
+    <!-- Punto de entrada explícito en Program.vb (mismo patrón de sesiones anteriores) -->
+    <MyType>WindowsFormsWithCustomSubMain</MyType>
+    <StartupObject>InventarioORM.Program</StartupObject>
+    <OptionStrict>On</OptionStrict>
+    <OptionInfer>On</OptionInfer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Proveedor de EF Core para MariaDB: instala EF Core 9.x y MySqlConnector 2.4.0 -->
+    <!-- No agregar Microsoft.EntityFrameworkCore 10.x por separado -->
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- La guía de la carpeta bin\Debug no forma parte de la compilación -->
+    <None Remove="bin\**" />
+  </ItemGroup>
+
+</Project>
+</script>
+    <div class="callout ok"><span class="badge">✅</span><div><span class="t">Punto de control.</span> En <span class="path">Dependencias → Paquetes</span> aparece Pomelo. Compile con <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">B</span> sin errores.</div></div>
+  </div></div>
+
+  <!-- 9.3 -->
+  <h3 id="p-entidades">9.3 Conexión y clases de entidad</h3>
+  <div class="step"><div class="n">5</div><div>
+    <h4>Módulo de conexión</h4>
+    <p>Mantenemos el patrón del curso: la cadena de conexión vive en un solo lugar. <span class="path">Proyecto → Agregar módulo</span> → <code>ConexionBD.vb</code>. Ajuste <code>Pwd</code> antes de ejecutar.</p>
+<script type="text/x-code" data-lang="vb" data-title="ConexionBD.vb">
+''' <summary>Configuración centralizada de acceso a MariaDB.</summary>
+Module ConexionBD
+
+    ' Ajuste usuario y contraseña según su instalación de MariaDB
+    Public Const CadenaConexion As String =
+        "Server=localhost;Port=3306;Database=libreria_segovia;" &
+        "Uid=root;Pwd=SU_CONTRASEÑA;"
+
+    ' Versión del servidor MariaDB instalado (consulte con: SELECT VERSION();)
+    Public ReadOnly VersionServidor As New Version(11, 4, 0)
+
+End Module
+</script>
+  </div></div>
+
+  <div class="step"><div class="n">6</div><div>
+    <h4>Entidad Categoria</h4>
+    <p><span class="path">Proyecto → Agregar clase</span> → <code>Categoria.vb</code>. Los <strong>atributos</strong> entre <code>&lt; &gt;</code> son las instrucciones de mapeo para EF Core.</p>
+<script type="text/x-code" data-lang="vb" data-title="Categoria.vb">
+Imports System.ComponentModel.DataAnnotations
+Imports System.ComponentModel.DataAnnotations.Schema
+
+''' <summary>Entidad que representa la tabla "categorias".</summary>
+<Table("categorias")>                       ' clase → tabla
+Public Class Categoria
+
+    <Key>                                   ' clave primaria
+    <Column("id_categoria")>                ' propiedad → columna
+    Public Property Id As Integer
+
+    <Required, StringLength(60)>
+    <Column("nombre")>
+    Public Property Nombre As String = ""
+
+    ' Propiedad de navegación: una categoría tiene muchos productos (1 → N)
+    Public Property Productos As ICollection(Of Producto) = New List(Of Producto)()
+
+End Class
+</script>
+  </div></div>
+
+  <div class="step"><div class="n">7</div><div>
+    <h4>Entidad Producto</h4>
+<script type="text/x-code" data-lang="vb" data-title="Producto.vb">
+Imports System.ComponentModel.DataAnnotations
+Imports System.ComponentModel.DataAnnotations.Schema
+
+''' <summary>Entidad que representa la tabla "productos".</summary>
+<Table("productos")>
+Public Class Producto
+
+    <Key, Column("id_producto")>
+    Public Property Id As Integer
+
+    <Required, StringLength(100), Column("nombre")>
+    Public Property Nombre As String = ""
+
+    ' TypeName asegura DECIMAL(10,2): precios en córdobas con dos decimales
+    <Column("precio", TypeName:="decimal(10,2)")>
+    Public Property Precio As Decimal
+
+    <Column("existencia")>
+    Public Property Existencia As Integer
+
+    ' Clave foránea (columna) ...
+    <Column("id_categoria")>
+    Public Property CategoriaId As Integer
+
+    ' ... y su propiedad de navegación (objeto relacionado)
+    <ForeignKey(NameOf(CategoriaId))>
+    Public Property Categoria As Categoria
+
+    ' Token de concurrencia: EF lo agrega al WHERE de UPDATE y DELETE
+    <ConcurrencyCheck, Column("version_fila")>
+    Public Property VersionFila As Integer = 1
+
+End Class
+</script>
+  </div></div>
+
+  <div class="step"><div class="n">8</div><div>
+    <h4>Clase para mostrar en la grilla</h4>
+    <p>Para el <code>DataGridView</code> no usamos la entidad directamente, sino una clase plana con el nombre de la categoría ya resuelto. A este tipo de clase se le llama <strong>DTO</strong> o <strong>modelo de vista</strong>.</p>
+<script type="text/x-code" data-lang="vb" data-title="ProductoVista.vb">
+''' <summary>Datos de un producto preparados para mostrarse en pantalla.</summary>
+Public Class ProductoVista
+    Public Property Id As Integer
+    Public Property Nombre As String = ""
+    Public Property Categoria As String = ""
+    Public Property CategoriaId As Integer
+    Public Property Precio As Decimal
+    Public Property Existencia As Integer
+    Public Property VersionFila As Integer
+End Class
+</script>
+  </div></div>
+
+  <!-- 9.4 -->
+  <h3 id="p-contexto">9.4 El DbContext</h3>
+  <div class="step"><div class="n">9</div><div>
+    <h4>AppDbContext.vb</h4>
+    <p>El contexto hereda de <code>DbContext</code>, expone un <code>DbSet</code> por tabla y, en <code>OnConfiguring</code>, indica el proveedor y la cadena de conexión. Agregamos <code>LogTo</code> para ver en la ventana <strong>Salida</strong> el SQL que genera EF Core.</p>
+<script type="text/x-code" data-lang="vb" data-title="AppDbContext.vb">
+Imports Microsoft.EntityFrameworkCore
+Imports Microsoft.Extensions.Logging
+
+''' <summary>Sesión de trabajo con la base de datos libreria_segovia.</summary>
+Public Class AppDbContext
+    Inherits DbContext
+
+    ' Cada DbSet representa una tabla
+    Public Property Categorias As DbSet(Of Categoria)
+    Public Property Productos As DbSet(Of Producto)
+
+    Protected Overrides Sub OnConfiguring(optionsBuilder As DbContextOptionsBuilder)
+        optionsBuilder.
+            UseMySql(CadenaConexion, New MariaDbServerVersion(VersionServidor)).
+            LogTo(Sub(mensaje) Debug.WriteLine(mensaje), LogLevel.Information).
+            EnableSensitiveDataLogging()   ' muestra valores de parámetros (solo para aprender)
+    End Sub
+
+End Class
+</script>
+    <div class="callout info"><span class="badge">💡</span><div><span class="t">Atributos o Fluent API.</span> El mismo mapeo puede escribirse sobrescribiendo <code>OnModelCreating</code>, por ejemplo <code>modelBuilder.Entity(Of Producto)().ToTable("productos")</code>. Los atributos son más visuales para empezar; la Fluent API ofrece más opciones en proyectos grandes.</div></div>
+    <div class="callout ok"><span class="badge">✅</span><div><span class="t">Punto de control.</span> Compile la solución. Si <code>MariaDbServerVersion</code> aparece subrayado, revise que <code>Imports Microsoft.EntityFrameworkCore</code> esté al inicio del archivo.</div></div>
+  </div></div>
+
+  <!-- 9.5 -->
+  <h3 id="p-form">9.5 Diseño del formulario</h3>
+  <div class="step"><div class="n">10</div><div>
+    <h4>Renombre Form1 a FrmProductos y agregue los controles</h4>
+    <p>Desde el Cuadro de herramientas arrastre los controles y asigne su propiedad <strong>(Name)</strong> según la tabla.</p>
+    <figure>
+      <svg viewBox="0 0 900 470" role="img" aria-label="Maqueta del formulario FrmProductos">
+        <rect x="20" y="10" width="860" height="450" rx="10" class="s-box"/>
+        <rect x="20" y="10" width="860" height="34" rx="10" class="s-head"/>
+        <text x="40" y="33" class="s-th">Inventario · Librería y Papelería Segovia</text>
+        <text x="40" y="75" class="s-t">Buscar:</text>
+        <rect x="100" y="58" width="300" height="28" rx="5" class="s-box-p"/><text x="110" y="77" class="s-tm">txtBuscar</text>
+        <rect x="410" y="58" width="90" height="28" rx="5" class="s-box-d"/><text x="455" y="77" text-anchor="middle" class="s-th" style="font-size:12px">btnBuscar</text>
+        <rect x="40" y="100" width="500" height="300" rx="6" class="s-box-p"/>
+        <text x="290" y="125" text-anchor="middle" class="s-tt">dgvProductos</text>
+        <g class="s-tm"><text x="55" y="155">Id</text><text x="95" y="155">Nombre</text><text x="270" y="155">Categoría</text><text x="380" y="155">Precio</text><text x="460" y="155">Exist.</text></g>
+        <path d="M50 165 H530" class="s-line-m"/>
+        <g class="s-code" style="font-size:11.5px"><text x="55" y="188">1</text><text x="95" y="188">Caja de témperas…</text><text x="270" y="188">Arte y man…</text><text x="380" y="188">C$ 145.00</text><text x="465" y="188">18</text>
+        <text x="55" y="212">2</text><text x="95" y="212">Cuaderno univ…</text><text x="270" y="212">Papelería</text><text x="380" y="212">C$ 85.00</text><text x="465" y="212">40</text></g>
+        <g class="s-t"><text x="570" y="118">Nombre</text><text x="570" y="178">Categoría</text><text x="570" y="238">Precio (C$)</text><text x="570" y="298">Existencia</text></g>
+        <rect x="570" y="126" width="290" height="28" rx="5" class="s-box-p"/><text x="580" y="145" class="s-tm">txtNombre</text>
+        <rect x="570" y="186" width="290" height="28" rx="5" class="s-box-p"/><text x="580" y="205" class="s-tm">cboCategoria  ▾</text>
+        <rect x="570" y="246" width="140" height="28" rx="5" class="s-box-p"/><text x="580" y="265" class="s-tm">nudPrecio</text>
+        <rect x="570" y="306" width="140" height="28" rx="5" class="s-box-p"/><text x="580" y="325" class="s-tm">nudExistencia</text>
+        <g>
+          <rect x="570" y="352" width="140" height="32" rx="6" class="s-box"/><text x="640" y="373" text-anchor="middle" class="s-t">btnNuevo</text>
+          <rect x="720" y="352" width="140" height="32" rx="6" class="s-box-d"/><text x="790" y="373" text-anchor="middle" class="s-th" style="font-size:13px">btnGuardar</text>
+          <rect x="570" y="392" width="140" height="32" rx="6" class="s-box-d"/><text x="640" y="413" text-anchor="middle" class="s-th" style="font-size:13px">btnActualizar</text>
+          <rect x="720" y="392" width="140" height="32" rx="6" fill="#b4232c"/><text x="790" y="413" text-anchor="middle" class="s-th" style="font-size:13px">btnEliminar</text>
+        </g>
+        <rect x="20" y="432" width="860" height="28" class="s-box-p"/><text x="40" y="451" class="s-tm">lblEstado — “6 productos cargados”</text>
+      </svg>
+      <figcaption>Figura 9. Distribución sugerida de FrmProductos (tamaño aprox. 920 × 520).</figcaption>
+    </figure>
+    <div class="tbl-wrap"><table class="tbl">
+      <tr><th>Control</th><th>(Name)</th><th>Propiedades a configurar</th></tr>
+      <tr><td>TextBox</td><td><code>txtBuscar</code></td><td>—</td></tr>
+      <tr><td>Button</td><td><code>btnBuscar</code></td><td>Text: <em>Buscar</em></td></tr>
+      <tr><td>DataGridView</td><td><code>dgvProductos</code></td><td>Anchor: Top, Bottom, Left, Right (el resto se configura por código)</td></tr>
+      <tr><td>TextBox</td><td><code>txtNombre</code></td><td>MaxLength: 100</td></tr>
+      <tr><td>ComboBox</td><td><code>cboCategoria</code></td><td>DropDownStyle: <em>DropDownList</em></td></tr>
+      <tr><td>NumericUpDown</td><td><code>nudPrecio</code></td><td>DecimalPlaces: 2 · Maximum: 999999 · Increment: 0.5</td></tr>
+      <tr><td>NumericUpDown</td><td><code>nudExistencia</code></td><td>Maximum: 100000</td></tr>
+      <tr><td>Button ×4</td><td><code>btnNuevo</code>, <code>btnGuardar</code>, <code>btnActualizar</code>, <code>btnEliminar</code></td><td>Text: <em>Nuevo</em>, <em>Guardar</em>, <em>Actualizar</em>, <em>Eliminar</em></td></tr>
+      <tr><td>Label (o StatusStrip)</td><td><code>lblEstado</code></td><td>Dock: Bottom · AutoSize: False</td></tr>
+    </table></div>
+    <p>Finalmente, agregue el módulo <code>Program.vb</code>, que arranca la aplicación con <strong>FrmProductos</strong>:</p>
+<script type="text/x-code" data-lang="vb" data-title="Program.vb">
+Imports System.Windows.Forms
+
+''' <summary>Punto de entrada de la aplicación.</summary>
+Module Program
+
+    <STAThread>
+    Sub Main()
+        Application.SetHighDpiMode(HighDpiMode.SystemAware)
+        Application.EnableVisualStyles()
+        Application.SetCompatibleTextRenderingDefault(False)
+        Application.Run(New FrmProductos())
+    End Sub
+
+End Module
+</script>
+  </div></div>
+
+  <!-- 9.6 -->
+  <h3 id="p-codigo">9.6 Código CRUD del formulario</h3>
+  <p>Presione <span class="kbd">F7</span> sobre el formulario para abrir el código. Lo construiremos por bloques; al final tendrá el archivo completo.</p>
+
+  <div class="step"><div class="n">11</div><div>
+    <h4>Campos, carga inicial y utilidades</h4>
+<script type="text/x-code" data-lang="vb" data-title="FrmProductos.vb — parte 1">
+Imports Microsoft.EntityFrameworkCore
+
+Public Class FrmProductos
+
+    ' Producto seleccionado en la grilla (0 = ninguno)
+    Private _idSeleccionado As Integer = 0
+    ' Versión que el usuario vio al seleccionar: base del control de concurrencia
+    Private _versionLeida As Integer = 0
+
+    ' ===================== CARGA INICIAL =====================
+    Private Async Sub FrmProductos_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        dgvProductos.ReadOnly = True
+        dgvProductos.SelectionMode = DataGridViewSelectionMode.FullRowSelect
+        dgvProductos.MultiSelect = False
+        dgvProductos.AllowUserToAddRows = False
+        dgvProductos.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+
+        Try
+            Await CargarCategoriasAsync()
+            Await CargarProductosAsync()
+        Catch ex As Exception
+            MostrarError("No fue posible conectar con MariaDB.", ex)
+        End Try
+    End Sub
+
+    ''' <summary>READ: llena el ComboBox con las categorías.</summary>
+    Private Async Function CargarCategoriasAsync() As Task
+        Using ctx As New AppDbContext()
+            Dim categorias = Await ctx.Categorias.
+                AsNoTracking().
+                OrderBy(Function(c) c.Nombre).
+                ToListAsync()
+
+            cboCategoria.DisplayMember = NameOf(Categoria.Nombre)
+            cboCategoria.ValueMember = NameOf(Categoria.Id)
+            cboCategoria.DataSource = categorias
+        End Using
+    End Function
+
+    ' ===================== UTILIDADES =====================
+    ''' <summary>Bloquea los botones mientras se espera a la base de datos.</summary>
+    Private Sub EstablecerOcupado(ocupado As Boolean, Optional mensaje As String = "")
+        UseWaitCursor = ocupado
+        For Each b In {btnNuevo, btnGuardar, btnActualizar, btnEliminar, btnBuscar}
+            b.Enabled = Not ocupado
+        Next
+        If mensaje <> "" Then lblEstado.Text = mensaje
+    End Sub
+
+    Private Function DatosValidos() As Boolean
+        If txtNombre.Text.Trim() = "" Then
+            MessageBox.Show("Escriba el nombre del producto.", "Validación",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            txtNombre.Focus()
+            Return False
+        End If
+        If cboCategoria.SelectedValue Is Nothing Then
+            MessageBox.Show("Seleccione una categoría.", "Validación",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return False
+        End If
+        Return True
+    End Function
+
+    Private Sub LimpiarCampos()
+        _idSeleccionado = 0
+        _versionLeida = 0
+        txtNombre.Clear()
+        nudPrecio.Value = 0
+        nudExistencia.Value = 0
+        If cboCategoria.Items.Count > 0 Then cboCategoria.SelectedIndex = 0
+        dgvProductos.ClearSelection()
+        txtNombre.Focus()
+    End Sub
+
+    Private Sub MostrarError(mensaje As String, ex As Exception)
+        lblEstado.Text = "Error: " & ex.Message
+        MessageBox.Show(mensaje & vbCrLf & vbCrLf & ex.Message, "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error)
+    End Sub
+</script>
+  </div></div>
+
+  <div class="step"><div class="n">12</div><div>
+    <h4>READ: listar y buscar productos</h4>
+    <p>La consulta proyecta (<code>Select</code>) cada producto en un <code>ProductoVista</code>. Gracias a <code>p.Categoria.Nombre</code>, EF Core genera el <code>INNER JOIN</code>.</p>
+<script type="text/x-code" data-lang="vb" data-title="FrmProductos.vb — parte 2">
+    ' ===================== READ =====================
+    ''' <summary>Consulta los productos (opcionalmente filtrados) y los muestra.</summary>
+    Private Async Function CargarProductosAsync(Optional filtro As String = "") As Task
+        EstablecerOcupado(True, "Consultando productos…")
+        Try
+            Using ctx As New AppDbContext()
+                ' La consulta se arma por partes; aún no se ejecuta
+                Dim consulta = ctx.Productos.AsNoTracking()
+
+                If filtro.Trim() <> "" Then
+                    consulta = consulta.Where(Function(p) p.Nombre.Contains(filtro.Trim()))
+                End If
+
+                ' ToListAsync() es el momento en que se envía el SELECT
+                Dim lista = Await consulta.
+                    OrderBy(Function(p) p.Nombre).
+                    Select(Function(p) New ProductoVista With {
+                        .Id = p.Id,
+                        .Nombre = p.Nombre,
+                        .Categoria = p.Categoria.Nombre,
+                        .CategoriaId = p.CategoriaId,
+                        .Precio = p.Precio,
+                        .Existencia = p.Existencia,
+                        .VersionFila = p.VersionFila
+                    }).
+                    ToListAsync()
+
+                dgvProductos.DataSource = lista
+                FormatearGrilla()
+                lblEstado.Text = $"{lista.Count} producto(s) cargado(s)"
+            End Using
+        Finally
+            EstablecerOcupado(False)
+        End Try
+    End Function
+
+    Private Sub FormatearGrilla()
+        With dgvProductos.Columns
+            .Item("CategoriaId").Visible = False
+            .Item("Id").FillWeight = 30
+            .Item("Nombre").FillWeight = 160
+            .Item("Precio").DefaultCellStyle.Format = "'C$' #,##0.00"
+            .Item("Precio").DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight
+            .Item("VersionFila").HeaderText = "Versión"
+        End With
+    End Sub
+
+    Private Async Sub btnBuscar_Click(sender As Object, e As EventArgs) Handles btnBuscar.Click
+        Try
+            Await CargarProductosAsync(txtBuscar.Text)
+        Catch ex As Exception
+            MostrarError("No se pudo realizar la búsqueda.", ex)
+        End Try
+    End Sub
+
+    ''' <summary>Al seleccionar una fila, se copian sus datos a los controles.</summary>
+    Private Sub dgvProductos_SelectionChanged(sender As Object, e As EventArgs) Handles dgvProductos.SelectionChanged
+        Dim fila = TryCast(dgvProductos.CurrentRow?.DataBoundItem, ProductoVista)
+        If fila Is Nothing OrElse Not dgvProductos.CurrentRow.Selected Then Return
+
+        _idSeleccionado = fila.Id
+        _versionLeida = fila.VersionFila      ' guardamos la versión que vio el usuario
+        txtNombre.Text = fila.Nombre
+        cboCategoria.SelectedValue = fila.CategoriaId
+        nudPrecio.Value = fila.Precio
+        nudExistencia.Value = fila.Existencia
+    End Sub
+
+    Private Sub btnNuevo_Click(sender As Object, e As EventArgs) Handles btnNuevo.Click
+        LimpiarCampos()
+        lblEstado.Text = "Escriba los datos del nuevo producto y presione Guardar."
+    End Sub
+</script>
+    <div class="callout ok"><span class="badge">✅</span><div><span class="t">Punto de control.</span> Temporalmente comente los manejadores de los demás botones y ejecute con <span class="kbd">F5</span>: la grilla debe mostrar los 6 productos con su categoría y el precio en córdobas.</div></div>
+  </div></div>
+
+  <div class="step"><div class="n">13</div><div>
+    <h4>CREATE: guardar un producto nuevo</h4>
+<script type="text/x-code" data-lang="vb" data-title="FrmProductos.vb — parte 3">
+    ' ===================== CREATE =====================
+    Private Async Sub btnGuardar_Click(sender As Object, e As EventArgs) Handles btnGuardar.Click
+        If Not DatosValidos() Then Return
+
+        EstablecerOcupado(True, "Guardando…")
+        Try
+            Using ctx As New AppDbContext()
+                Dim nuevo As New Producto With {
+                    .Nombre = txtNombre.Text.Trim(),
+                    .CategoriaId = CInt(cboCategoria.SelectedValue),
+                    .Precio = nudPrecio.Value,
+                    .Existencia = CInt(nudExistencia.Value),
+                    .VersionFila = 1
+                }
+                ctx.Productos.Add(nuevo)          ' estado: Added
+                Await ctx.SaveChangesAsync()      ' INSERT + recupera el AUTO_INCREMENT
+
+                lblEstado.Text = $"Producto #{nuevo.Id} guardado."
+            End Using
+        Catch ex As Exception
+            MostrarError("No se pudo guardar el producto.", ex)
+        Finally
+            EstablecerOcupado(False)
+        End Try
+
+        Await CargarProductosAsync()
+        LimpiarCampos()
+    End Sub
+</script>
+  </div></div>
+
+  <div class="step"><div class="n">14</div><div>
+    <h4>UPDATE: actualizar con control de concurrencia</h4>
+    <p>Buscamos el producto con <code>FindAsync</code> y le indicamos a EF Core que el valor <em>original</em> de <code>VersionFila</code> es el que vio el usuario. Así el <code>UPDATE</code> incluirá <code>WHERE version_fila = _versionLeida</code>.</p>
+<script type="text/x-code" data-lang="vb" data-title="FrmProductos.vb — parte 4">
+    ' ===================== UPDATE =====================
+    Private Async Sub btnActualizar_Click(sender As Object, e As EventArgs) Handles btnActualizar.Click
+        If _idSeleccionado = 0 Then
+            MessageBox.Show("Seleccione un producto de la lista.", "Actualizar")
+            Return
+        End If
+        If Not DatosValidos() Then Return
+
+        Dim huboConflicto As Boolean = False
+        EstablecerOcupado(True, "Actualizando…")
+        Try
+            Using ctx As New AppDbContext()
+                Dim p = Await ctx.Productos.FindAsync(_idSeleccionado)   ' estado: Unchanged
+                If p Is Nothing Then
+                    huboConflicto = True          ' otro usuario lo eliminó
+                Else
+                    ' El valor original del token = la versión que vio el usuario
+                    ctx.Entry(p).Property(Function(x) x.VersionFila).OriginalValue = _versionLeida
+
+                    p.Nombre = txtNombre.Text.Trim()       ' estado: Modified
+                    p.CategoriaId = CInt(cboCategoria.SelectedValue)
+                    p.Precio = nudPrecio.Value
+                    p.Existencia = CInt(nudExistencia.Value)
+                    p.VersionFila = _versionLeida + 1      ' nueva versión
+
+                    Await ctx.SaveChangesAsync()           ' UPDATE … WHERE id AND version
+                    lblEstado.Text = $"Producto #{p.Id} actualizado."
+                End If
+            End Using
+        Catch ex As DbUpdateConcurrencyException
+            huboConflicto = True                  ' 0 filas afectadas
+        Catch ex As Exception
+            MostrarError("No se pudo actualizar el producto.", ex)
+        Finally
+            EstablecerOcupado(False)
+        End Try
+
+        If huboConflicto Then
+            MessageBox.Show("Otro usuario modificó o eliminó este producto mientras usted lo editaba." &
+                            vbCrLf & "Se mostrarán los datos actuales; revise y vuelva a intentarlo.",
+                            "Conflicto de concurrencia", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End If
+        Await CargarProductosAsync()
+    End Sub
+</script>
+    <div class="callout info"><span class="badge">💡</span><div><span class="t">¿Por qué no hay <code>Await</code> dentro del <code>Catch</code>?</span> Visual Basic no permite <code>Await</code> en bloques <code>Catch</code> ni <code>Finally</code>. Por eso marcamos <code>huboConflicto</code> y recargamos después del <code>Try</code>.</div></div>
+  </div></div>
+
+  <div class="step"><div class="n">15</div><div>
+    <h4>DELETE: eliminar con confirmación</h4>
+<script type="text/x-code" data-lang="vb" data-title="FrmProductos.vb — parte 5">
+    ' ===================== DELETE =====================
+    Private Async Sub btnEliminar_Click(sender As Object, e As EventArgs) Handles btnEliminar.Click
+        If _idSeleccionado = 0 Then
+            MessageBox.Show("Seleccione un producto de la lista.", "Eliminar")
+            Return
+        End If
+
+        Dim r = MessageBox.Show($"¿Eliminar definitivamente ""{txtNombre.Text}""?", "Confirmar",
+                                MessageBoxButtons.YesNo, MessageBoxIcon.Question)
+        If r <> DialogResult.Yes Then Return
+
+        Dim huboConflicto As Boolean = False
+        EstablecerOcupado(True, "Eliminando…")
+        Try
+            Using ctx As New AppDbContext()
+                Dim p = Await ctx.Productos.FindAsync(_idSeleccionado)
+                If p Is Nothing Then
+                    huboConflicto = True
+                Else
+                    ctx.Entry(p).Property(Function(x) x.VersionFila).OriginalValue = _versionLeida
+                    ctx.Productos.Remove(p)                ' estado: Deleted
+                    Await ctx.SaveChangesAsync()           ' DELETE … WHERE id AND version
+                    lblEstado.Text = "Producto eliminado."
+                End If
+            End Using
+        Catch ex As DbUpdateConcurrencyException
+            huboConflicto = True
+        Catch ex As Exception
+            MostrarError("No se pudo eliminar el producto.", ex)
+        Finally
+            EstablecerOcupado(False)
+        End Try
+
+        If huboConflicto Then
+            MessageBox.Show("El producto fue modificado o eliminado por otro usuario.",
+                            "Conflicto de concurrencia", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End If
+        Await CargarProductosAsync()
+        LimpiarCampos()
+    End Sub
+
+End Class
+</script>
+  </div></div>
+
+  <!-- 9.7 -->
+  <h3 id="p-probar">9.7 Probar y observar el SQL generado</h3>
+  <div class="step"><div class="n">16</div><div>
+    <h4>Abra la ventana Salida</h4>
+    <p>Ejecute con <span class="kbd">F5</span> y abra <span class="path">Ver → Salida</span> (<span class="kbd">Ctrl</span>+<span class="kbd">Alt</span>+<span class="kbd">O</span>), en “Mostrar salida de: <strong>Depurar</strong>”. Cada operación mostrará algo como:</p>
+<script type="text/x-code" data-lang="sql" data-title="Ventana Salida (fragmento)">
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (3ms) [Parameters=[@p4='3', @p0='1', @p1='42',
+      @p2='Cuaderno universitario 100 hojas', @p3='90.00', @p5='2', @p6='1'],
+      CommandType='Text', CommandTimeout='30']
+      UPDATE `productos` SET `id_categoria` = @p0, `existencia` = @p1,
+             `nombre` = @p2, `precio` = @p3, `version_fila` = @p5
+      WHERE `id_producto` = @p4 AND `version_fila` = @p6;
+      SELECT ROW_COUNT();
+</script>
+  </div></div>
+  <div class="step"><div class="n">17</div><div>
+    <h4>Pruebe el conflicto de concurrencia</h4>
+    <p>Ejecute <strong>dos instancias</strong> del programa (desde la carpeta <code>bin\Debug\net10.0-windows</code> abra el <code>.exe</code> mientras Visual Studio también ejecuta otra). Seleccione el mismo producto en ambas, cambie el precio y presione <strong>Actualizar</strong> primero en una y luego en la otra. La segunda debe mostrar el aviso de conflicto.</p>
+    <div class="callout ok"><span class="badge">✅</span><div><span class="t">Punto de control final.</span> Puede crear, buscar, modificar y eliminar productos; la columna <em>Versión</em> aumenta con cada actualización y el conflicto se detecta entre dos ventanas.</div></div>
+  </div></div>
+</section>
+
+<!-- ============ 10. REFUERZO ============ -->
+<section class="block" id="refuerzo">
+  <h2><span class="num">10</span> Ejercicio de refuerzo en clase</h2>
+  <p>La gerencia de la librería necesita controlar el inventario. Amplíe <strong>FrmProductos</strong> con lo siguiente:</p>
+  <div class="grid g2">
+    <div class="card"><h4><span class="ico">1</span>Filtro por categoría</h4><p>Agregue un <code>ComboBox</code> <code>cboFiltroCategoria</code> con la opción “Todas”. Al cambiarlo, la grilla muestra solo los productos de esa categoría.</p><p class="small">Pista: agregue un segundo parámetro opcional a <code>CargarProductosAsync</code> y un <code>Where(Function(p) p.CategoriaId = idCat)</code>.</p></div>
+    <div class="card"><h4><span class="ico">2</span>Productos con bajo stock</h4><p>Un <code>CheckBox</code> “Solo existencia menor a 10” que filtre la consulta.</p><p class="small">Pista: los filtros se pueden encadenar; cada <code>Where</code> se convierte en una condición <code>AND</code>.</p></div>
+    <div class="card"><h4><span class="ico">3</span>Valor del inventario</h4><p>Muestre en una etiqueta el valor total en córdobas: suma de <code>Precio × Existencia</code> de todos los productos.</p><p class="small">Pista: <code>Await ctx.Productos.SumAsync(Function(p) p.Precio * p.Existencia)</code>. Revise en la ventana Salida el SQL que se genera.</p></div>
+    <div class="card"><h4><span class="ico">4</span>Validación de duplicados</h4><p>Antes de guardar, verifique que no exista otro producto con el mismo nombre.</p><p class="small">Pista: <code>AnyAsync</code> genera un <code>SELECT EXISTS(…)</code>.</p></div>
+  </div>
+</section>
+
+<!-- ============ 11. ERRORES ============ -->
+<section class="block" id="errores">
+  <h2><span class="num">11</span> Errores comunes y cómo resolverlos</h2>
+
+  <details class="err"><summary><span><code>Unable to connect to any of the specified MySQL hosts</code></span></summary><div class="ebody">
+    <p><strong>Causa:</strong> el servicio de MariaDB no está iniciado o el puerto es distinto de 3306.</p>
+    <p><strong>Solución:</strong> en <span class="path">Servicios de Windows</span> inicie <em>MariaDB</em>; verifique el puerto en HeidiSQL y corríjalo en <code>ConexionBD.vb</code>.</p></div></details>
+
+  <details class="err"><summary><span><code>Access denied for user 'root'@'localhost'</code></span></summary><div class="ebody">
+    <p><strong>Causa:</strong> contraseña incorrecta en la cadena de conexión.</p>
+    <p><strong>Solución:</strong> ajuste <code>Pwd=</code> en <code>ConexionBD.vb</code>. Es el único lugar donde debe cambiarse.</p></div></details>
+
+  <details class="err"><summary><span><code>Unknown column 'p.Id' in 'field list'</code> (o similar)</span></summary><div class="ebody">
+    <p><strong>Causa:</strong> falta el atributo <code>&lt;Column("…")&gt;</code> y EF Core usa el nombre de la propiedad como nombre de columna.</p>
+    <p><strong>Solución:</strong> revise que cada propiedad tenga su <code>&lt;Column&gt;</code> con el nombre exacto de la tabla en MariaDB.</p></div></details>
+
+  <details class="err"><summary><span><code>Table 'libreria_segovia.articulos' doesn't exist</code></span></summary><div class="ebody">
+    <p><strong>Causa:</strong> sin <code>&lt;Table("…")&gt;</code>, EF Core usa el nombre del <code>DbSet</code> como nombre de tabla.</p>
+    <p><strong>Solución:</strong> agregue <code>&lt;Table("productos")&gt;</code> sobre la clase o renombre el <code>DbSet</code>.</p></div></details>
+
+  <details class="err"><summary><span><code>MissingMethodException</code> o <code>TypeLoadException</code> al crear el contexto</span></summary><div class="ebody">
+    <p><strong>Causa:</strong> se mezclaron versiones: Pomelo 9.0.0 con <code>Microsoft.EntityFrameworkCore</code> 10.x.</p>
+    <p><strong>Solución:</strong> desinstale el paquete <code>Microsoft.EntityFrameworkCore</code> agregado manualmente y deje que Pomelo traiga su propia versión. Revise el <code>.vbproj</code>.</p></div></details>
+
+  <details class="err"><summary><span><code>A second operation was started on this context instance before a previous operation completed</code></span></summary><div class="ebody">
+    <p><strong>Causa:</strong> dos operaciones asíncronas usaron el mismo <code>DbContext</code> a la vez (por ejemplo, doble clic rápido o un contexto declarado como campo del formulario).</p>
+    <p><strong>Solución:</strong> un <code>Using ctx As New AppDbContext()</code> por operación y deshabilitar botones mientras se espera (<code>EstablecerOcupado</code>).</p></div></details>
+
+  <details class="err"><summary><span><code>The instance of entity type 'Producto' cannot be tracked because another instance with the same key value is already being tracked</code></span></summary><div class="ebody">
+    <p><strong>Causa:</strong> el mismo contexto ya rastrea un objeto con ese <code>Id</code> y se intenta adjuntar (<code>Attach</code>/<code>Update</code>) otro objeto distinto con la misma clave.</p>
+    <p><strong>Solución:</strong> usar contextos de vida corta y cargar la entidad con <code>FindAsync</code> antes de modificarla, como en la práctica.</p></div></details>
+
+  <details class="err"><summary><span>Los cambios “no se guardan”, sin error</span></summary><div class="ebody">
+    <p><strong>Causa:</strong> se olvidó <code>SaveChangesAsync()</code>, o se modificó un objeto obtenido con <code>AsNoTracking()</code> (el contexto no lo vigila).</p>
+    <p><strong>Solución:</strong> para modificar, obtenga la entidad con seguimiento (<code>FindAsync</code>) y siempre termine con <code>Await ctx.SaveChangesAsync()</code>.</p></div></details>
+
+  <details class="err"><summary><span><code>Cannot add or update a child row: a foreign key constraint fails</code></span></summary><div class="ebody">
+    <p><strong>Causa:</strong> <code>CategoriaId</code> vale 0 o un id inexistente (ComboBox sin selección).</p>
+    <p><strong>Solución:</strong> valide <code>cboCategoria.SelectedValue</code> antes de guardar (función <code>DatosValidos</code>).</p></div></details>
+
+  <details class="err"><summary><span><code>DbUpdateConcurrencyException</code></span></summary><div class="ebody">
+    <p><strong>No es un error de programación:</strong> es el aviso esperado de que otro usuario cambió la fila. Se maneja informando al usuario y recargando los datos, como hace la práctica.</p></div></details>
+</section>
+
+<!-- ============ 12. TAREA ============ -->
+<section class="block" id="tarea">
+  <h2><span class="num">12</span> Tarea</h2>
+  <p>Trabajen en sus equipos y suban el resultado al repositorio del curso.</p>
+  <div class="step"><div class="n">A</div><div>
+    <h4>Mantenimiento de categorías</h4>
+    <p>Cree <code>FrmCategorias</code> con el CRUD completo de la tabla <code>categorias</code> usando EF Core. Ábralo desde un botón de <code>FrmProductos</code> y, al cerrarlo, recargue el <code>cboCategoria</code>.</p>
+  </div></div>
+  <div class="step"><div class="n">B</div><div>
+    <h4>Regla de negocio al eliminar</h4>
+    <p>Impida eliminar una categoría que tenga productos asociados. Muestre cuántos productos la usan antes de rechazar la operación (<code>CountAsync</code>).</p>
+  </div></div>
+  <div class="step"><div class="n">C</div><div>
+    <h4>Nueva columna</h4>
+    <p>Agregue a la tabla <code>productos</code> la columna <code>codigo_barras VARCHAR(20) NULL</code>, mapéela en la entidad y en <code>ProductoVista</code>, y permita buscar tanto por nombre como por código.</p>
+  </div></div>
+</section>
+
+<!-- ============ 13. GITHUB ============ -->
+<section class="block" id="github">
+  <h2><span class="num">13</span> Estructura de entrega en GitHub</h2>
+  <p>Cada equipo sube la práctica al repositorio del curso con la estructura siguiente. Se separa la documentación (<code>docs</code>), el script de la base de datos (<code>database</code>) y el código (<code>src</code>). La carpeta <strong>bin/Debug</strong> de la solución <strong>se entrega</strong>.</p>
+<div class="tree"><span class="d">Practica_ORM_EFCore/</span>
+├── README.md                          <span class="c">← descripción, requisitos y pasos de ejecución</span>
+├── .gitignore                         <span class="c">← ignora .vs/ y obj/, conserva bin/Debug/</span>
+├── <span class="d">docs/</span>
+│   ├── ORM_EFCore_CRUD_VBNET.html     <span class="c">← esta guía</span>
+│   └── <span class="d">img/</span>  logo-azul.png · logo-blanco.png
+├── <span class="d">database/</span>
+│   └── libreria_segovia.sql           <span class="c">← tablas y datos de ejemplo</span>
+└── <span class="d">src/</span>
+    ├── InventarioORM.sln              <span class="c">← solución de Visual Studio</span>
+    └── <span class="d">InventarioORM/</span>
+        ├── InventarioORM.vbproj
+        ├── Program.vb · ConexionBD.vb
+        ├── Categoria.vb · Producto.vb · ProductoVista.vb
+        ├── AppDbContext.vb
+        ├── FrmProductos.vb · FrmProductos.Designer.vb
+        └── <span class="d">bin/</span>
+            └── <span class="k">Debug/net10.0-windows/</span>     <span class="c">← SE ENTREGA</span>
+                ├── InventarioORM.exe · InventarioORM.dll · .pdb
+                ├── InventarioORM.deps.json · .runtimeconfig.json
+                └── Pomelo… · Microsoft.EntityFrameworkCore… · MySqlConnector.dll</div>
+
+  <h3>Qué se sube y qué no</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Carpeta / archivo</th><th>¿Se sube?</th><th>Motivo</th></tr>
+    <tr><td><code>src/**/*.vb</code>, <code>.vbproj</code>, <code>.sln</code></td><td>Sí</td><td>Código fuente de la solución</td></tr>
+    <tr><td><code>bin/Debug/net10.0-windows/</code></td><td><strong>Sí</strong></td><td>Permite ejecutar la entrega directamente con el <code>.exe</code></td></tr>
+    <tr><td><code>database/*.sql</code></td><td>Sí</td><td>Reproduce la base de datos en cualquier equipo</td></tr>
+    <tr><td><code>obj/</code></td><td>No</td><td>Archivos intermedios que se regeneran al compilar</td></tr>
+    <tr><td><code>.vs/</code>, <code>*.user</code></td><td>No</td><td>Configuración personal de Visual Studio</td></tr>
+    <tr><td><code>bin/Release/</code></td><td>No</td><td>No forma parte de esta entrega</td></tr>
+  </table></div>
+
+  <h3>Comandos de entrega</h3>
+<script type="text/x-code" data-lang="ps" data-title="Terminal (Git Bash o PowerShell) en la raíz del repositorio">
+git pull
+git add Practica_ORM_EFCore
+# -f fuerza a incluir bin/Debug si un .gitignore superior ignora "bin/"
+git add -f Practica_ORM_EFCore/src/InventarioORM/bin/Debug
+git commit -m "Práctica ORM EF Core - Equipo XX"
+git push
+</script>
+  <div class="callout warn"><span class="badge">🔒</span><div><span class="t">Cuidado con la contraseña.</span> La cadena de conexión queda compilada dentro de <code>InventarioORM.dll</code>. Antes de compilar la versión que se sube, deje <code>Pwd=SU_CONTRASEÑA;</code> en <code>ConexionBD.vb</code>.</div></div>
+  <div class="callout ok"><span class="badge">✅</span><div><span class="t">Punto de control.</span> Ejecute <code>git status</code> antes del <em>commit</em>. Deben aparecer los archivos de <code>bin/Debug</code> y no deben aparecer los de <code>obj/</code> ni <code>.vs/</code>.</div></div>
+</section>
+
+<footer><img class="foot-logo on-light" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfoAAAEgCAYAAABcsLEAAAAACXBIWXMAAC4jAAAuIwF4pT92AAAFc0lEQVR4nO3YsW3UYBiA4R90PbS4gRGyAE7YJCPQXQnp8Ba3CcdNwAipbo4oEg0SEkQ40uX180ju/X/f2a/Or959/HY7xni8WMfP82n/ec1ZTvNiR8AlOpxP+8Oa9zXNy9Gm17UbY3wYY1yXDhVkR8Aleo4oe9et7HXqNADAb4QeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDCdpbLRt1Z/CZ92foAXgDP5sqEnk06n/ZfbX57pnkR+gvn2VyfT/cAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAELazXPh/07zcjDG+G+WqPp1P+2PoPPyDaV4ed35tVuvxjx4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDChB4AwoQeAMKEHgDCdpb7ItyPMX5sfQgAPJ3QvwDn0/4wxjhsfQ4APJ1P9wAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQJvQAECb0ABAm9AAQtrPc1V1N83KMnYm/e2tGbNDtNC83Kx/7yg9pXUK/vjdjjOvaoQD+4P2viwvm0z0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCECT0AhAk9AIQJPQCE7cYYRwsGLtD9M9zSnUWzKWOMB5yAKetxEWftAAAAAElFTkSuQmCC" alt="Logo institucional"><img class="foot-logo on-dark" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAecAAAEVCAYAAADaVy1GAAAACXBIWXMAAC4jAAAuIwF4pT92AAAFJ0lEQVR4nO3Y4Y0SURhA0U9DAZZACXQgVqIl2IHbwVqCpbAdrB1QAh1gTPhr3CwTchnOSd5v8t7HzM28D+fzeT8zfxfvd7ispZgJcCu/Zua44G89mdzVjptLBH7c+UYKlo6zmQC3cFg4zt5d13v5eO87AIC1EWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIgRZwCIEWcAiBFnAIjZGAgr9Xtmvhvuqu1m5vnRDyHoy6MfwAJO4sxanWbmYLpwc567BbjWBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgBhxBoAYcQaAGHEGgJiNgcCbfLssrrN3fqv3c2Z2j34IV3oVZ3ib7cx8dlbwXzvPyvVcawNAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0CMOANAjDgDQIw4A0DMxkCSni4LgAfkyxkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBiNgayiO3M7FewD/5t62xYqd3C2/rkj3I9cV7G18sCuDfPJtbjWhsAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBixBkAYsQZAGLEGQBiNjNznJkXgwHuzMm7i1Waef0DS4Qf5cvzIJcAAAAASUVORK5CYII=" alt="Logo institucional">Programación de Aplicaciones de Escritorio · Ingeniería en Sistemas · ORM con Entity Framework Core, Visual Basic .NET y MariaDB</footer>
+</main>
+</div>
+
+<script>
+(function(){
+
+  // ---------- Tema ----------
+  const root = document.documentElement;
+  let saved = null; try{ saved = localStorage.getItem("orm-theme"); }catch(e){}
+  if(saved) root.setAttribute("data-theme", saved);
+  document.getElementById("themeBtn").onclick = () => {
+    const cur = root.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const next = cur === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try{ localStorage.setItem("orm-theme", next); }catch(e){}
+  };
+
+  // ---------- Tamaño de texto ----------
+  let scale = 1;
+  const applyScale = () => root.style.setProperty("--scale", scale);
+  document.getElementById("fontUp").onclick = () => { scale = Math.min(1.6, +(scale + .1).toFixed(2)); applyScale(); };
+  document.getElementById("fontDown").onclick = () => { scale = Math.max(.8, +(scale - .1).toFixed(2)); applyScale(); };
+  document.getElementById("fontReset").onclick = () => { scale = 1; applyScale(); };
+
+  // ---------- Menú móvil ----------
+  const sb = document.getElementById("sidebar");
+  document.getElementById("menuBtn").onclick = () => sb.classList.toggle("open");
+  sb.querySelectorAll("a").forEach(a => a.addEventListener("click", () => sb.classList.remove("open")));
+
+  // ---------- Progreso de lectura ----------
+  const bar = document.getElementById("progress");
+  addEventListener("scroll", () => {
+    const h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + "%";
+  }, {passive:true});
+
+  // ---------- Scroll-spy ----------
+  const links = [...sb.querySelectorAll("a")];
+  const targets = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  const spy = () => {
+    let current = targets[0];
+    for(const t of targets){ if(t.getBoundingClientRect().top < 140) current = t; }
+    links.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + current.id));
+  };
+  addEventListener("scroll", spy, {passive:true}); spy();
+
+  // ---------- Resaltado de código ----------
+  const KW = {
+    vb: "AddressOf AndAlso As Async Await ByVal Catch Class CInt Const Dim Each Else ElseIf End Exit False Finally For Function Handles If Imports In Inherits Is IsNot Me Module MyBase New Next Not Nothing Of Optional OrElse Overrides Private Property Protected Public ReadOnly Return Select Sub Then True Try TryCast Using While With".split(" "),
+    sql: "ADD ALTER AND AS BY CHARACTER COLLATE CONSTRAINT CREATE DATABASE DECIMAL DEFAULT DELETE EXISTS FOREIGN FROM IF INNER INSERT INT INTO JOIN KEY LIKE LIMIT NOT NULL ON ORDER PRIMARY REFERENCES SELECT SET TABLE UNIQUE UPDATE USE VALUES VARCHAR WHERE AUTO_INCREMENT ROW_COUNT LAST_INSERT_ID SET".split(" "),
+    ps: "Install-Package".split(" "),
+    xml: []
+  };
+  const TYPES = "String Integer Decimal Boolean Object Task Version DbContext DbSet DbContextOptionsBuilder ICollection List EventArgs Exception DbUpdateConcurrencyException MessageBox MessageBoxButtons MessageBoxIcon DialogResult DataGridViewSelectionMode DataGridViewAutoSizeColumnsMode DataGridViewContentAlignment MariaDbServerVersion LogLevel Debug Producto Categoria ProductoVista AppDbContext MySqlConnection MySqlCommand".split(" ");
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  function highlight(code, lang){
+    if(lang === "xml"){
+      return esc(code).replace(/(&lt;\/?)([\w.]+)/g,'$1<span class="tk-kw">$2</span>').replace(/("[^"]*")/g,'<span class="tk-str">$1</span>');
+    }
+    const kws = new Set((KW[lang]||[]).map(k => lang==="sql" ? k.toUpperCase() : k));
+    const types = new Set(lang==="vb" ? TYPES : []);
+    const com = lang === "vb" ? "'[^\\n]*" : lang === "sql" ? "--[^\\n]*" : "#[^\\n]*";
+    const str = lang === "vb" ? '"(?:[^"]|"")*"' : lang === "sql" ? "'(?:[^']|'')*'" : '"[^"]*"';
+    const re = new RegExp("(" + com + ")|(" + str + ")|(\\b\\d+(?:\\.\\d+)?D?\\b)|([A-Za-z_][\\w-]*)", "g");
+    let out = "", last = 0, m;
+    while((m = re.exec(code))){
+      out += esc(code.slice(last, m.index));
+      const t = m[0];
+      if(m[1]) out += '<span class="tk-com">'+esc(t)+'</span>';
+      else if(m[2]) out += '<span class="tk-str">'+esc(t)+'</span>';
+      else if(m[3]) out += '<span class="tk-num">'+esc(t)+'</span>';
+      else {
+        const key = lang==="sql" ? t.toUpperCase() : t;
+        if(kws.has(key)) out += '<span class="tk-kw">'+esc(t)+'</span>';
+        else if(types.has(t)) out += '<span class="tk-type">'+esc(t)+'</span>';
+        else out += esc(t);
+      }
+      last = re.lastIndex;
+    }
+    return out + esc(code.slice(last));
+  }
+  function dedent(s){
+    s = s.replace(/^\n+|\s+$/g, "");
+    const lines = s.split("\n");
+    const ind = Math.min(...lines.filter(l => l.trim()).map(l => l.match(/^ */)[0].length));
+    return lines.map(l => l.slice(ind)).join("\n");
+  }
+  const LANGNAME = {vb:"VB.NET", sql:"SQL", ps:"PowerShell", xml:"XML"};
+  document.querySelectorAll('script[type="text/x-code"]').forEach(s => {
+    const lang = s.dataset.lang, code = dedent(s.textContent);
+    const wrap = document.createElement("div"); wrap.className = "code";
+    wrap.innerHTML = '<div class="code-head"><span><span class="lang">'+(LANGNAME[lang]||lang)+'</span>'+esc(s.dataset.title||"")+'</span><button type="button">Copiar</button></div><pre><code></code></pre>';
+    wrap.querySelector("code").innerHTML = highlight(code, lang);
+    wrap.querySelector("button").onclick = e => {
+      const b = e.currentTarget;
+      const done = () => { b.textContent = "¡Copiado!"; setTimeout(() => b.textContent = "Copiar", 1500); };
+      if(navigator.clipboard) navigator.clipboard.writeText(code).then(done, () => fallbackCopy(code, done));
+      else fallbackCopy(code, done);
+    };
+    s.replaceWith(wrap);
+  });
+  function fallbackCopy(text, done){
+    const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); done(); }catch(e){} ta.remove();
+  }
+
+  // ---------- Explorador de mapeo ----------
+  const MAP = [
+    ["Id As Integer","id_producto INT PK","<b>Clave primaria.</b> <code>&lt;Key, Column(\"id_producto\")&gt;</code> indica que la propiedad <code>Id</code> corresponde a la columna <code>id_producto</code>. Como es <code>AUTO_INCREMENT</code>, EF Core no la envía en el INSERT y la lee después."],
+    ["Nombre As String","nombre VARCHAR(100)","<b>Texto obligatorio.</b> <code>&lt;Required, StringLength(100)&gt;</code> refleja el <code>NOT NULL</code> y la longitud de la columna."],
+    ["Precio As Decimal","precio DECIMAL(10,2)","<b>Moneda.</b> <code>Decimal</code> es el tipo correcto para córdobas (evita errores de redondeo de <code>Double</code>). <code>TypeName:=\"decimal(10,2)\"</code> fija la precisión."],
+    ["Existencia As Integer","existencia INT","<b>Mapeo directo.</b> <code>Integer</code> de VB.NET ↔ <code>INT</code> de MariaDB."],
+    ["CategoriaId As Integer","id_categoria INT FK","<b>Clave foránea.</b> Guarda el número de la categoría. Es lo que realmente se almacena en la fila."],
+    ["Categoria As Categoria","(no es columna)","<b>Propiedad de navegación.</b> No existe en la tabla: EF Core la llena con el objeto <code>Categoria</code> relacionado usando la clave foránea. Permite escribir <code>p.Categoria.Nombre</code>."],
+    ["VersionFila As Integer","version_fila INT","<b>Token de concurrencia.</b> <code>&lt;ConcurrencyCheck&gt;</code> hace que EF Core agregue <code>AND version_fila = @original</code> a los UPDATE y DELETE."]
+  ];
+  const L = document.getElementById("mapLeft"), R = document.getElementById("mapRight"), X = document.getElementById("mapExplain");
+  MAP.forEach((m,i) => {
+    const pl = m[0].split(" As "), pr = m[1].split(" ");
+    L.insertAdjacentHTML("beforeend", '<div class="map-row" data-i="'+i+'"><span>'+pl[0]+'</span><span>'+(pl[1]||"")+'</span></div>');
+    R.insertAdjacentHTML("beforeend", '<div class="map-row" data-i="'+i+'"><span>'+pr[0]+'</span><span>'+pr.slice(1).join(" ")+'</span></div>');
+  });
+  document.querySelectorAll(".map-row").forEach(r => r.onclick = () => {
+    const i = r.dataset.i;
+    document.querySelectorAll(".map-row").forEach(x => x.classList.toggle("on", x.dataset.i === i));
+    X.innerHTML = MAP[i][2];
+  });
+
+  // ---------- Simulador Change Tracker ----------
+  const con = document.getElementById("trkConsole"), card = document.getElementById("entCard");
+  let st = "Detached", ent = null, origPrecio = null;
+  const log = (t, c) => { con.insertAdjacentHTML("beforeend", '<div class="'+(c||"")+'">'+t+'</div>'); con.scrollTop = con.scrollHeight; };
+  function paint(){
+    document.querySelectorAll("#stateBar .state").forEach(s => s.classList.toggle("on", s.dataset.s === st));
+    card.textContent = ent ? 'Producto { Id = '+ent.id+', Nombre = "'+ent.nombre+'", Precio = '+ent.precio.toFixed(2)+' }' : 'Producto { Id = 0, Nombre = "Lapicero azul", Precio = 12.00 }';
+  }
+  function trk(op){
+    if(op === "reset"){ st="Detached"; ent=null; con.innerHTML=""; log("// Contexto nuevo. El objeto aún no es conocido por EF Core.","c-info"); return paint(); }
+    if(op === "add"){
+      if(st !== "Detached") return log("✖ Add() solo tiene sentido con un objeto Detached.","c-bad");
+      ent = {id:0, nombre:"Lapicero azul", precio:12}; st="Added"; log("✔ Add(): estado → Added (pendiente de INSERT)","c-ok");
+    } else if(op === "find"){
+      if(st !== "Detached") return log("✖ Ya hay una entidad rastreada. Reinicie para consultar.","c-bad");
+      ent = {id:15, nombre:"Lapicero azul", precio:12}; origPrecio = 12; st="Unchanged";
+      log("SELECT ... FROM `productos` WHERE `id_producto` = 15 LIMIT 1;","c-sql"); log("✔ Find(): el objeto llega desde la BD → Unchanged","c-ok");
+    } else if(op === "mod"){
+      if(!ent) return log("✖ No hay entidad. Use Add() o Find() primero.","c-bad");
+      if(st === "Deleted") return log("✖ La entidad está marcada para eliminar.","c-bad");
+      ent.precio = ent.precio === 15 ? 18 : 15;
+      if(st === "Unchanged"){ st="Modified"; log("✔ Precio cambiado: el rastreador detecta la diferencia → Modified","c-ok"); }
+      else log("✔ Precio cambiado. Estado sin cambios ("+st+")","c-ok");
+    } else if(op === "rem"){
+      if(!ent) return log("✖ No hay entidad que eliminar.","c-bad");
+      if(st === "Added"){ st="Detached"; ent=null; log("✔ Remove() sobre Added: nunca llegó a la BD → Detached (no habrá SQL)","c-ok"); }
+      else if(st === "Deleted") log("✖ Ya está marcada como Deleted.","c-bad");
+      else { st="Deleted"; log("✔ Remove(): estado → Deleted (pendiente de DELETE)","c-ok"); }
+    } else if(op === "save"){
+      if(st === "Added"){ log("INSERT INTO `productos` (`nombre`, `precio`, ...) VALUES ('Lapicero azul', "+ent.precio.toFixed(2)+", ...);","c-sql"); ent.id=15; origPrecio=ent.precio; st="Unchanged"; log("✔ Id asignado = 15 → Unchanged","c-ok"); }
+      else if(st === "Modified"){ log("UPDATE `productos` SET `precio` = "+ent.precio.toFixed(2)+" WHERE `id_producto` = 15;","c-sql"); origPrecio=ent.precio; st="Unchanged"; log("✔ Cambios confirmados → Unchanged","c-ok"); }
+      else if(st === "Deleted"){ log("DELETE FROM `productos` WHERE `id_producto` = 15;","c-sql"); st="Detached"; ent=null; log("✔ Fila eliminada → Detached","c-ok"); }
+      else log("// SaveChanges(): no hay cambios pendientes, no se envía SQL.","c-info");
+    }
+    paint();
+  }
+  document.querySelectorAll("[data-op]").forEach(b => b.onclick = () => trk(b.dataset.op));
+  trk("reset");
+
+  // ---------- Pestañas CRUD ----------
+  const tabs = document.querySelectorAll("#crudTabs .tab");
+  tabs.forEach(t => t.onclick = () => {
+    tabs.forEach(x => x.classList.toggle("on", x === t));
+    document.querySelectorAll("#crud-linq .tab-panel").forEach(p => p.classList.toggle("on", p.dataset.p === t.dataset.t));
+  });
+
+  // ---------- Demo síncrono/asíncrono ----------
+  const sf = document.getElementById("syncForm"), si = document.getElementById("syncInput"), sbtn = document.getElementById("syncBtn");
+  sbtn.onclick = () => {
+    sbtn.disabled = true; sf.classList.add("frozen","paused"); si.disabled = true;
+    document.getElementById("syncTitle").textContent = "FrmProductos (No responde)";
+    setTimeout(() => { sf.classList.remove("frozen","paused"); si.disabled = false; sbtn.disabled = false; document.getElementById("syncTitle").textContent = "FrmProductos — Guardado ✔"; }, 3000);
+  };
+  const abtn = document.getElementById("asyncBtn");
+  abtn.onclick = () => {
+    abtn.disabled = true; const t = document.getElementById("asyncTitle"); t.textContent = "FrmProductos — Guardando…";
+    setTimeout(() => { abtn.disabled = false; t.textContent = "FrmProductos — Guardado ✔"; }, 3000);
+  };
+
+  // ---------- Simulador de concurrencia ----------
+  const cc = document.getElementById("concConsole"), db = {precio:85, version:1}, users = {A:null, B:null};
+  const clog = (t,c) => { cc.insertAdjacentHTML("beforeend",'<div class="'+(c||"")+'">'+t+'</div>'); cc.scrollTop = cc.scrollHeight; };
+  function paintDb(){ document.getElementById("dbBox").innerHTML = '<b>MariaDB · productos</b><br><br>id_producto = 1<br>nombre = Cuaderno univ.<br>precio = C$ '+db.precio.toFixed(2)+'<br>version_fila = <b style="font-size:1.2rem">'+db.version+'</b>'; }
+  function userUI(u){
+    const ok = users[u] !== null;
+    document.getElementById("precio"+u).disabled = !ok;
+    document.querySelector('[data-u="'+u+'"][data-a="guardar"]').disabled = !ok;
+    document.getElementById("info"+u).textContent = ok ? "Leyó versión "+users[u] : "Sin datos leídos";
+  }
+  document.querySelectorAll("[data-u]").forEach(b => b.onclick = () => {
+    const u = b.dataset.u;
+    if(b.dataset.a === "leer"){
+      users[u] = db.version; document.getElementById("precio"+u).value = db.precio;
+      clog("Cajero "+u+": SELECT … → precio "+db.precio.toFixed(2)+", version_fila "+db.version,"c-info");
+    } else {
+      const nuevo = parseFloat(document.getElementById("precio"+u).value) || 0;
+      clog("Cajero "+u+": UPDATE productos SET precio = "+nuevo.toFixed(2)+", version_fila = "+(users[u]+1)+" WHERE id_producto = 1 AND version_fila = "+users[u]+";","c-sql");
+      if(users[u] === db.version){
+        db.precio = nuevo; db.version++; clog("  ✔ 1 fila afectada. Guardado correcto.","c-ok");
+      } else {
+        clog("  ✖ 0 filas afectadas (la fila está en versión "+db.version+") → DbUpdateConcurrencyException","c-bad");
+        clog("  → El programa avisa al cajero "+u+" y recarga los datos actuales.","c-info");
+      }
+      users[u] = null;
+    }
+    paintDb(); userUI("A"); userUI("B");
+  });
+  document.getElementById("concReset").onclick = () => { db.precio=85; db.version=1; users.A=users.B=null; cc.innerHTML=""; clog("Pruebe: A lee → B lee → A guarda → B guarda.","c-info"); paintDb(); userUI("A"); userUI("B"); };
+  document.getElementById("concReset").click();
+})();
+</script>
+</body>
+</html>
